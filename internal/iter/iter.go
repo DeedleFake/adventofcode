@@ -3,6 +3,7 @@ package iter
 import (
 	"cmp"
 	"slices"
+	"unsafe"
 )
 
 type Iter[T any] func(func(T) bool) bool
@@ -11,14 +12,68 @@ type Addable interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr | ~string
 }
 
+type Pair[T1, T2 any] struct {
+	One T1
+	Two T2
+}
+
 func Slice[E any, S ~[]E](s S) Iter[E] {
 	return func(yield func(E) bool) bool {
 		for _, v := range s {
 			if !yield(v) {
-				break
+				return false
 			}
 		}
 		return false
+	}
+}
+
+func Bytes(s string) Iter[byte] {
+	return Slice(unsafe.Slice(unsafe.StringData(s), len(s)))
+}
+
+func Runes(s string) Iter[rune] {
+	return func(yield func(rune) bool) bool {
+		for _, c := range s {
+			if !yield(c) {
+				return false
+			}
+		}
+		return false
+	}
+}
+
+func Windows[T any](i Iter[T], n int) Iter[[]T] {
+	s := make([]T, 0, n)
+	return func(yield func([]T) bool) bool {
+		for v := range i {
+			if len(s) < n {
+				s = append(s, v)
+				if len(s) == n {
+					if !yield(s) {
+						return false
+					}
+				}
+				continue
+			}
+			shiftLeft(s, v)
+			if !yield(s) {
+				return false
+			}
+		}
+		// TODO: Yield if the first window never even got filled?
+		return false
+	}
+}
+
+func Enum[T any](i Iter[T]) Iter[Pair[int, T]] {
+	return func(yield func(Pair[int, T]) bool) bool {
+		var n int
+		return i(func(v T) bool {
+			r := yield(Pair[int, T]{n, v})
+			n++
+			return r
+		})
 	}
 }
 
@@ -39,6 +94,30 @@ func Filter[T any](i Iter[T], where func(T) bool) Iter[T] {
 			return true
 		})
 	}
+}
+
+func TakeUntil[T any](i Iter[T], until func(T) bool) Iter[T] {
+	return func(yield func(T) bool) bool {
+		return i(func(v T) bool {
+			if until(v) {
+				return false
+			}
+			return yield(v)
+		})
+	}
+}
+
+func Any[T any](i Iter[T], check func(T) bool) bool {
+	for v := range i {
+		if check(v) {
+			return true
+		}
+	}
+	return false
+}
+
+func All[T any](i Iter[T], check func(T) bool) bool {
+	return Any(i, func(v T) bool { return !check(v) })
 }
 
 func Sum[T Addable](i Iter[T]) (sum T) {
@@ -76,8 +155,7 @@ func extent[T cmp.Ordered](i Iter[T], n int) (r []T) {
 		if i >= len(r) {
 			continue
 		}
-		copy(r[i+1:], r)
-		r[i] = v
+		shiftRight(r[i:], v)
 	}
 	return r
 }
@@ -104,4 +182,14 @@ func Max[T cmp.Ordered](i Iter[T]) (max T) {
 		return max
 	}
 	return r[0]
+}
+
+func shiftLeft[E any, S ~[]E](s S, v E) {
+	copy(s, s[1:])
+	s[len(s)-1] = v
+}
+
+func shiftRight[E any, S ~[]E](s S, v E) {
+	copy(s[1:], s)
+	s[0] = v
 }
