@@ -12,15 +12,15 @@ func Calories(r io.Reader, err *error) iter.Iter[int] {
 	return func(yield func(int) bool) bool {
 		var cur int
 		for line := range iter.Lines(r, err) {
-			if len(line) == 0 {
-				if !yield(cur) {
-					return false
-				}
-				cur = 0
+			if len(line) > 0 {
+				v, _ := strconv.ParseInt(line, 10, 0)
+				cur += int(v)
 				continue
 			}
-			v, _ := strconv.ParseInt(line, 10, 0)
-			cur += int(v)
+			if !yield(cur) {
+				return false
+			}
+			cur = 0
 		}
 		if cur != 0 {
 			yield(cur)
