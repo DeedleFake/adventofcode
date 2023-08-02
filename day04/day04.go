@@ -8,19 +8,28 @@ import (
 	"strings"
 )
 
-func parseRange(str string) (start, end int) {
+type Line struct {
+	L, R [2]int
+}
+
+func ParseLine(line string) Line {
+	left, right, _ := strings.Cut(line, ",")
+	return Line{
+		L: parseRange(left),
+		R: parseRange(right),
+	}
+}
+
+func parseRange(str string) [2]int {
 	s, e, _ := strings.Cut(str, "-")
 	sn, _ := strconv.ParseInt(s, 10, 0)
 	en, _ := strconv.ParseInt(e, 10, 0)
-	return int(sn), int(en)
+	return [2]int{int(sn), int(en)}
 }
 
-func checkLine(line string) bool {
-	left, right, _ := strings.Cut(line, ",")
-	l1, l2 := parseRange(left)
-	r1, r2 := parseRange(right)
-
-	return ((l1 >= r1) && (l2 <= r2)) || ((r1 >= l1) && (r2 <= l2))
+func check(line Line) bool {
+	return ((line.L[0] >= line.R[0]) && (line.L[1] <= line.R[1])) ||
+		((line.R[0] >= line.L[0]) && (line.R[1] <= line.L[1]))
 }
 
 func main() {
@@ -30,12 +39,15 @@ func main() {
 	}
 	defer file.Close()
 
-	var total int
-	for line := range iter.Lines(file, &err) {
-		if checkLine(line) {
-			total++
-		}
-	}
+	data := iter.Filter(
+		iter.Map(
+			iter.Lines(file, &err),
+			ParseLine,
+		),
+		check,
+	)
+
+	total := iter.Count(data)
 	if err != nil {
 		panic(err)
 	}
