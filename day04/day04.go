@@ -27,12 +27,16 @@ func parseRange(str string) [2]int {
 	return [2]int{int(sn), int(en)}
 }
 
-func check(line Line) bool {
+func isSubset(line Line) bool {
 	return ((line.L[0] >= line.R[0]) && (line.L[1] <= line.R[1])) ||
 		((line.R[0] >= line.L[0]) && (line.R[1] <= line.L[1]))
 }
 
-func main() {
+func overlaps(line Line) bool {
+	return (line.L[1] >= line.R[0]) && (line.R[1] >= line.L[0])
+}
+
+func count(check func(Line) bool) {
 	file, err := os.Open(os.Args[1])
 	if err != nil {
 		panic(err)
@@ -53,4 +57,9 @@ func main() {
 	}
 
 	fmt.Println(total)
+}
+
+func main() {
+	count(isSubset)
+	count(overlaps)
 }
