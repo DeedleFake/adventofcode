@@ -39,7 +39,7 @@ func Overlaps(line Line) bool {
 	return (line.L[1] >= line.R[0]) && (line.R[1] >= line.L[0])
 }
 
-func Count(check func(Line) bool) {
+func Count(check func(Line) bool) int {
 	file := strings.NewReader(input)
 
 	var err error
@@ -55,11 +55,18 @@ func Count(check func(Line) bool) {
 	if err != nil {
 		panic(err)
 	}
+	return total
+}
 
-	fmt.Println(total)
+func Part1() int {
+	return Count(IsSubset)
+}
+
+func Part2() int {
+	return Count(Overlaps)
 }
 
 func main() {
-	Count(IsSubset)
-	Count(Overlaps)
+	fmt.Println(Part1())
+	fmt.Println(Part2())
 }
