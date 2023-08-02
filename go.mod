@@ -1,3 +1,3 @@
-module day04
+module adventofcode
 
 go 1.21

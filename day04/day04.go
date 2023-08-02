@@ -1,7 +1,7 @@
 package main
 
 import (
-	"day04/internal/iter"
+	"adventofcode/internal/iter"
 	_ "embed"
 	"fmt"
 	"strconv"
@@ -30,16 +30,16 @@ func parseRange(str string) [2]int {
 	return [2]int{int(sn), int(en)}
 }
 
-func isSubset(line Line) bool {
+func IsSubset(line Line) bool {
 	return ((line.L[0] >= line.R[0]) && (line.L[1] <= line.R[1])) ||
 		((line.R[0] >= line.L[0]) && (line.R[1] <= line.L[1]))
 }
 
-func overlaps(line Line) bool {
+func Overlaps(line Line) bool {
 	return (line.L[1] >= line.R[0]) && (line.R[1] >= line.L[0])
 }
 
-func count(check func(Line) bool) {
+func Count(check func(Line) bool) {
 	file := strings.NewReader(input)
 
 	var err error
@@ -60,6 +60,6 @@ func count(check func(Line) bool) {
 }
 
 func main() {
-	count(isSubset)
-	count(overlaps)
+	Count(IsSubset)
+	Count(Overlaps)
 }

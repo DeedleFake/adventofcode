@@ -1,7 +1,7 @@
 package main
 
 import (
-	"day04/internal/iter"
+	"adventofcode/internal/iter"
 	_ "embed"
 	"fmt"
 	"io"
@@ -33,7 +33,7 @@ func Calories(r io.Reader, err *error) iter.Iter[int] {
 	}
 }
 
-func count(get func(iter.Iter[int]) int) {
+func Count(get func(iter.Iter[int]) int) {
 	file := strings.NewReader(input)
 
 	var err error
@@ -44,6 +44,6 @@ func count(get func(iter.Iter[int]) int) {
 }
 
 func main() {
-	count(iter.Max[int])
-	count(func(i iter.Iter[int]) int { return iter.Sum(iter.Slice(iter.MaxN(i, 3))) })
+	Count(iter.Max[int])
+	Count(func(i iter.Iter[int]) int { return iter.Sum(iter.Slice(iter.MaxN(i, 3))) })
 }
