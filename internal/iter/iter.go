@@ -76,9 +76,6 @@ func extent[T cmp.Ordered](i Iter[T], n int) (r []T) {
 		if i >= len(r) {
 			continue
 		}
-		if i < 0 {
-			i = 0
-		}
 		copy(r[i+1:], r)
 		r[i] = v
 	}
