@@ -49,6 +49,10 @@ func Count[T any](i Iter[T]) int {
 	return Reduce(i, 0, func(acc int, cur T) int { return acc + 1 })
 }
 
+func Collect[T any](i Iter[T], dst []T) []T {
+	return Reduce(i, dst, func(acc []T, cur T) []T { return append(acc, cur) })
+}
+
 func Reduce[T, R any](i Iter[T], initial R, reducer func(R, T) R) R {
 	for v := range i {
 		initial = reducer(initial, v)
@@ -75,6 +79,7 @@ func extent[T cmp.Ordered](i Iter[T], n int) (r []T) {
 		if i < 0 {
 			i = 0
 		}
+		copy(r[i+1:], r)
 		r[i] = v
 	}
 	return r
