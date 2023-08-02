@@ -14,3 +14,9 @@ func TestPart1(t *testing.T) {
 func TestPart2(t *testing.T) {
 	assert.Equal(t, 3444, main.Part2())
 }
+
+func BenchmarkDeedleFake(b *testing.B) {
+	for range b.N {
+		main.Count(14)
+	}
+}
