@@ -33,17 +33,27 @@ func Calories(r io.Reader, err *error) iter.Iter[int] {
 	}
 }
 
-func Count(get func(iter.Iter[int]) int) {
+func Count(get func(iter.Iter[int]) int) int {
 	file := strings.NewReader(input)
 
 	var err error
-	fmt.Println(get(Calories(file, &err)))
+	r := get(Calories(file, &err))
 	if err != nil {
 		panic(err)
 	}
+
+	return r
+}
+
+func Part1() int {
+	return Count(iter.Max[int])
+}
+
+func Part2() int {
+	return Count(func(i iter.Iter[int]) int { return iter.Sum(iter.Slice(iter.MaxN(i, 3))) })
 }
 
 func main() {
-	Count(iter.Max[int])
-	Count(func(i iter.Iter[int]) int { return iter.Sum(iter.Slice(iter.MaxN(i, 3))) })
+	fmt.Println(Part1())
+	fmt.Println(Part2())
 }
