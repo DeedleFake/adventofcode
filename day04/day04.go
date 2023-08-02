@@ -2,11 +2,14 @@ package main
 
 import (
 	"day04/internal/iter"
+	_ "embed"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 )
+
+//go:embed input.txt
+var input string
 
 type Line struct {
 	L, R [2]int
@@ -37,12 +40,9 @@ func overlaps(line Line) bool {
 }
 
 func count(check func(Line) bool) {
-	file, err := os.Open(os.Args[1])
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
+	file := strings.NewReader(input)
 
+	var err error
 	data := iter.Filter(
 		iter.Map(
 			iter.Lines(file, &err),

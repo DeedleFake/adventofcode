@@ -2,11 +2,15 @@ package main
 
 import (
 	"day04/internal/iter"
+	_ "embed"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
+	"strings"
 )
+
+//go:embed input.txt
+var input string
 
 func Calories(r io.Reader, err *error) iter.Iter[int] {
 	return func(yield func(int) bool) bool {
@@ -30,12 +34,9 @@ func Calories(r io.Reader, err *error) iter.Iter[int] {
 }
 
 func count(get func(iter.Iter[int]) int) {
-	file, err := os.Open(os.Args[1])
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
+	file := strings.NewReader(input)
 
+	var err error
 	fmt.Println(get(Calories(file, &err)))
 	if err != nil {
 		panic(err)
