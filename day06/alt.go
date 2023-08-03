@@ -38,13 +38,14 @@ func Fastest() int {
 		var pos int
 		for pos = len(slice) - 1; pos >= 0; pos-- {
 			bit := slice[pos] % 32
+			ret := state&(1<<bit) != 0
 			state |= 1 << bit
-			if state&(1<<bit) != 0 {
+			if ret {
 				break
 			}
 		}
 		if pos < 0 {
-			return idx
+			return idx + 14
 		}
 		idx += pos + 1
 	}
