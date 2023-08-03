@@ -122,6 +122,10 @@ func TakeUntil[T any](i Iter[T], until func(T) bool) Iter[T] {
 	}
 }
 
+func Position[T any](i Iter[T], where func(T) bool) int {
+	return Count(TakeUntil(i, where))
+}
+
 func Any[T any](i Iter[T], check func(T) bool) bool {
 	for v := range i {
 		if check(v) {
