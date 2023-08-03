@@ -13,9 +13,9 @@ func Original() int {
 outer:
 	for idx+13 < len(input) {
 		var state int
-		for v := range iter.Enum(iter.RevBytes(input[idx : idx+14])) {
-			next := v.One
-			char := v.Two
+		for i := idx + 14 - 1; i >= idx; i-- {
+			char := input[i]
+			next := i - idx
 
 			bit := char % 32
 			if state&(1<<bit) != 0 {
@@ -24,7 +24,7 @@ outer:
 			}
 			state |= 1 << bit
 		}
-		return idx
+		return idx + 14
 	}
 	return -1
 }
