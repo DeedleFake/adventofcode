@@ -26,3 +26,9 @@ func BenchmarkOriginal(b *testing.B) {
 		main.Original()
 	}
 }
+
+func BenchmarkFastest(b *testing.B) {
+	for range b.N {
+		main.Fastest()
+	}
+}

@@ -25,3 +25,25 @@ outer:
 	}
 	return -1
 }
+
+func Fastest() int {
+	var idx int
+	for idx+14 <= len(input) {
+		slice := input[idx : idx+14]
+		var state uint32
+
+		var pos int
+		for pos = len(slice) - 1; pos >= 0; pos-- {
+			bit := slice[pos] % 32
+			state |= 1 << bit
+			if state&(1<<bit) != 0 {
+				break
+			}
+		}
+		if pos < 0 {
+			return idx
+		}
+		idx += pos + 1
+	}
+	return -1
+}
