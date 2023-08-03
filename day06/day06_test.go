@@ -32,3 +32,9 @@ func BenchmarkFastest(b *testing.B) {
 		main.Fastest()
 	}
 }
+
+func BenchmarkBenny(b *testing.B) {
+	for range b.N {
+		main.Benny()
+	}
+}

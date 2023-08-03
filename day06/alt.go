@@ -1,6 +1,9 @@
 package main
 
-import "adventofcode/internal/iter"
+import (
+	"adventofcode/internal/iter"
+	"math/bits"
+)
 
 // This file contains Go translations of the Rust implementations in
 // https://gist.github.com/david-a-perez/067a126edf72bbca9325adaa8e53769a#file-fastest_day6_part2-rs
@@ -46,4 +49,19 @@ func Fastest() int {
 		idx += pos + 1
 	}
 	return -1
+}
+
+func Benny() int {
+	var filter uint32
+	for _, c := range input[:14-1] {
+		filter ^= 1 << (c % 32)
+	}
+	return iter.Position(iter.Windows(iter.Bytes(input), 14), func(w []byte) bool {
+		first := w[0]
+		last := w[len(w)-1]
+		filter ^= 1 << (last % 32)
+		res := bits.OnesCount32(filter) == 14
+		filter ^= 1 << (first % 32)
+		return res
+	}) + 14
 }
