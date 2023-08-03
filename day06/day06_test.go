@@ -20,3 +20,9 @@ func BenchmarkDeedleFake(b *testing.B) {
 		main.Count(14)
 	}
 }
+
+func BenchmarkOriginal(b *testing.B) {
+	for range b.N {
+		main.Original()
+	}
+}
