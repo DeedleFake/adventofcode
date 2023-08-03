@@ -28,8 +28,23 @@ func Slice[E any, S ~[]E](s S) Iter[E] {
 	}
 }
 
+func RevSlice[E any, S ~[]E](s S) Iter[E] {
+	return func(yield func(E) bool) bool {
+		for i := len(s) - 1; i >= 0; i-- {
+			if !yield(s[i]) {
+				return false
+			}
+		}
+		return false
+	}
+}
+
 func Bytes(s string) Iter[byte] {
 	return Slice(unsafe.Slice(unsafe.StringData(s), len(s)))
+}
+
+func RevBytes(s string) Iter[byte] {
+	return RevSlice(unsafe.Slice(unsafe.StringData(s), len(s)))
 }
 
 func Runes(s string) Iter[rune] {
