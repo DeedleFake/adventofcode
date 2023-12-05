@@ -14,22 +14,36 @@ defmodule Day05 do
       }
     end
 
-    def map_list([], v), do: v
+    def map_all(maps, data, results \\ [])
+    def map_all([], _, results), do: Enum.uniq(results)
+    def map_all([m | maps], data, results), do: map_all(maps, data, results ++ map(m, data))
 
-    def map_list([m | maps], v) do
-      case Mapping.map(m, v) do
-        :out_of_range -> map_list(maps, v)
-        mv -> mv
-      end
+    def map(m, data, results \\ [])
+    def map(_, [], results), do: Enum.reverse(Enum.reject(results, &(Range.size(&1) == 0)))
+    def map(m, data, results) when not is_list(data), do: map(m, [data], results)
+
+    def map(m, [cur | data], results) when is_integer(cur),
+      do: map(m, [cur..cur//1 | data], results)
+
+    def map(m, [cur | data], results) do
+      {pre, over, post} = split_range(cur, src_to_range(m))
+      over = if Range.size(over) != 0, do: map_range(m, over), else: over
+      map(m, data, [pre, over, post | results])
     end
 
-    def map(m, v) do
-      i = v - m.src
+    defp split_range(outer, inner) do
+      {
+        min(outer.first, inner.first)..min(outer.last, inner.first - 1)//1,
+        max(outer.first, inner.first)..min(outer.last, inner.last)//1,
+        max(outer.first, inner.last + 1)..max(outer.last, inner.last)//1
+      }
+    end
 
-      cond do
-        i < 0 or i >= m.length -> :out_of_range
-        true -> m.dst + i
-      end
+    defp src_to_range(m), do: m.src..(m.src + m.length - 1)//1
+
+    defp map_range(m, r) do
+      offset = r.first - m.src
+      (m.dst + offset)..(m.dst + offset + Range.size(r) - 1)//1
     end
   end
 
@@ -65,31 +79,28 @@ defmodule Day05 do
 
     def seed_locations(a),
       do:
-        Stream.map(
-          a.seeds,
-          &map(a.maps, &1, [
-            :"seed-to-soil",
-            :"soil-to-fertilizer",
-            :"fertilizer-to-water",
-            :"water-to-light",
-            :"light-to-temperature",
-            :"temperature-to-humidity",
-            :"humidity-to-location"
-          ])
-        )
+        map(a.maps, a.seeds, [
+          :"seed-to-soil",
+          :"soil-to-fertilizer",
+          :"fertilizer-to-water",
+          :"water-to-light",
+          :"light-to-temperature",
+          :"temperature-to-humidity",
+          :"humidity-to-location"
+        ])
 
     def seeds_to_ranges(a), do: %{a | seeds: expand_ranges(a.seeds)}
 
     defp map(_, v, []), do: v
 
     defp map(m, v, [next | maps]),
-      do: map(m, Mapping.map_list(Keyword.get_values(m, next), v), maps)
+      do: map(m, Mapping.map_all(Keyword.get_values(m, next), v), maps)
 
     defp expand_ranges(nums, ranges \\ [])
     defp expand_ranges([], ranges), do: Stream.concat(Enum.reverse(ranges))
 
     defp expand_ranges([start, length | rem], ranges),
-      do: expand_ranges(rem, [start..(start + length - 1) | ranges])
+      do: expand_ranges(rem, [start..(start + length - 1)//1 | ranges])
   end
 
   def parse_nums(str, nums \\ [])
@@ -113,11 +124,12 @@ almanac =
 almanac
 |> Day05.Almanac.seed_locations()
 |> Enum.min()
-|> IO.puts()
+|> Enum.min()
+|> dbg()
 
 # Part 2:
-almanac
-|> Day05.Almanac.seeds_to_ranges()
-|> Day05.Almanac.seed_locations()
-|> Enum.min()
-|> IO.puts()
+# almanac
+# |> Day05.Almanac.seeds_to_ranges()
+# |> Day05.Almanac.seed_locations()
+# |> Enum.min()
+# |> IO.puts()
