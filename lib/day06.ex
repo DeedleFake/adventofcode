@@ -37,5 +37,10 @@ defmodule Day06 do
   end
 
   def part2(io) do
+    io
+    |> Enum.map(&String.replace(&1, " ", ""))
+    |> parse()
+    |> Enum.map(&Race.victories/1)
+    |> Enum.at(0)
   end
 end
