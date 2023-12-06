@@ -1,6 +1,6 @@
-#!/usr/bin/env elixir
-
 defmodule Day02 do
+  use Advent
+
   defmodule Line do
     defstruct red: 0, green: 0, blue: 0
   end
@@ -43,26 +43,24 @@ defmodule Day02 do
     [num, color] = String.split(str, " ", trim: true, parts: 2)
     %{color: String.to_atom(color), num: String.to_integer(num)}
   end
+
+  def part1(io) do
+    io
+    |> Stream.map(&String.trim/1)
+    |> Stream.map(&Day02.line/1)
+    |> Stream.filter(&Day02.filter/1)
+    |> Stream.map(&elem(&1, 0))
+    |> Enum.sum()
+  end
+
+  def part2(io) do
+    io
+    |> Stream.map(&String.trim/1)
+    |> Stream.map(&Day02.line/1)
+    |> Stream.map(&elem(&1, 1))
+    |> Stream.map(&Map.from_struct/1)
+    |> Stream.map(&Map.values/1)
+    |> Stream.map(&Enum.product/1)
+    |> Enum.sum()
+  end
 end
-
-input = IO.stream() |> Enum.to_list()
-
-# Part 1:
-input
-|> Stream.map(&String.trim/1)
-|> Stream.map(&Day02.line/1)
-|> Stream.filter(&Day02.filter/1)
-|> Stream.map(&elem(&1, 0))
-|> Enum.sum()
-|> IO.puts()
-
-# Part 2:
-input
-|> Stream.map(&String.trim/1)
-|> Stream.map(&Day02.line/1)
-|> Stream.map(&elem(&1, 1))
-|> Stream.map(&Map.from_struct/1)
-|> Stream.map(&Map.values/1)
-|> Stream.map(&Enum.product/1)
-|> Enum.sum()
-|> IO.puts()

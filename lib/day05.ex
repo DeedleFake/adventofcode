@@ -1,6 +1,6 @@
-#!/usr/bin/env elixir
-
 defmodule Day05 do
+  use Advent
+
   defmodule Mapping do
     defstruct dst: 0, src: 0, length: 0
 
@@ -113,23 +113,22 @@ defmodule Day05 do
       :error -> nums
     end
   end
+
+  def part1(io) do
+    io
+    |> Enum.map(&String.trim/1)
+    |> Day05.Almanac.parse()
+    |> Day05.Almanac.seed_locations()
+    |> Enum.min()
+    |> Enum.min()
+  end
+
+  defp part2(io) do
+    io
+    |> Enum.map(&String.trim/1)
+    |> Day05.Almanac.parse()
+    |> Day05.Almanac.seeds_to_ranges()
+    |> Day05.Almanac.seed_locations()
+    |> Enum.min()
+  end
 end
-
-almanac =
-  IO.stream()
-  |> Enum.map(&String.trim/1)
-  |> Day05.Almanac.parse()
-
-# Part 1:
-almanac
-|> Day05.Almanac.seed_locations()
-|> Enum.min()
-|> Enum.min()
-|> dbg()
-
-# Part 2:
-# almanac
-# |> Day05.Almanac.seeds_to_ranges()
-# |> Day05.Almanac.seed_locations()
-# |> Enum.min()
-# |> IO.puts()

@@ -1,6 +1,6 @@
-#!/usr/bin/env elixir
-
 defmodule Day04 do
+  use Advent
+
   defmodule Card do
     defstruct id: nil, winning: [], have: []
   end
@@ -46,21 +46,21 @@ defmodule Day04 do
   defp add_copies(nums, i, range) do
     Enum.reduce(range, nums, fn c, nums -> List.update_at(nums, c, &(&1 + Enum.at(nums, i))) end)
   end
+
+  def part1(io) do
+    io
+    |> Stream.map(&String.trim/1)
+    |> Stream.map(&Day04.parse_card/1)
+    |> Stream.map(&Day04.num_matches/1)
+    |> Stream.filter(&(&1 > 0))
+    |> Stream.map(&Integer.pow(2, &1 - 1))
+    |> Enum.sum()
+  end
+
+  def part2(io) do
+    io
+    |> Stream.map(&String.trim/1)
+    |> Stream.map(&Day04.parse_card/1)
+    |> Day04.count_with_copies()
+  end
 end
-
-lines = IO.stream() |> Enum.map(&String.trim/1)
-
-# Part 1:
-lines
-|> Stream.map(&Day04.parse_card/1)
-|> Stream.map(&Day04.num_matches/1)
-|> Stream.filter(&(&1 > 0))
-|> Stream.map(&Integer.pow(2, &1 - 1))
-|> Enum.sum()
-|> IO.puts()
-
-# Part 2:
-lines
-|> Stream.map(&Day04.parse_card/1)
-|> Day04.count_with_copies()
-|> IO.puts()

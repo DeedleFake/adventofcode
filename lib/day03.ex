@@ -1,6 +1,6 @@
-#!/usr/bin/env elixir
-
 defmodule Day03 do
+  use Advent
+
   defmodule Line do
     defstruct parts: [], symbols: []
   end
@@ -77,28 +77,26 @@ defmodule Day03 do
   def gear_number([p1, p2]) do
     String.to_integer(p1.number) * String.to_integer(p2.number)
   end
+
+  def part1(io) do
+    io
+    |> Stream.map(&String.trim/1)
+    |> Stream.map(&Day03.parse_line/1)
+    |> (&Stream.concat([struct(Day03.Line)], &1)).()
+    |> Stream.chunk_every(3, 1, Stream.cycle([struct(Day03.Line)]))
+    |> Stream.map(&Day03.part_numbers/1)
+    |> Stream.concat()
+    |> Enum.sum()
+  end
+
+  def part2(io) do
+    io
+    |> Stream.map(&String.trim/1)
+    |> Stream.map(&Day03.parse_line/1)
+    |> (&Stream.concat([struct(Day03.Line)], &1)).()
+    |> Stream.chunk_every(3, 1, Stream.cycle([struct(Day03.Line)]))
+    |> Stream.map(&Day03.gear_numbers/1)
+    |> Stream.concat()
+    |> Enum.sum()
+  end
 end
-
-lines =
-  IO.stream()
-  |> Stream.map(&String.trim/1)
-  |> Stream.map(&Day03.parse_line/1)
-  |> Enum.to_list()
-
-# Part 1:
-lines
-|> (&Stream.concat([struct(Day03.Line)], &1)).()
-|> Stream.chunk_every(3, 1, Stream.cycle([struct(Day03.Line)]))
-|> Stream.map(&Day03.part_numbers/1)
-|> Stream.concat()
-|> Enum.sum()
-|> IO.puts()
-
-# Part 2:
-lines
-|> (&Stream.concat([struct(Day03.Line)], &1)).()
-|> Stream.chunk_every(3, 1, Stream.cycle([struct(Day03.Line)]))
-|> Stream.map(&Day03.gear_numbers/1)
-|> Stream.concat()
-|> Enum.sum()
-|> IO.puts()

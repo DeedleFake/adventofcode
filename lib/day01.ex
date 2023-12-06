@@ -1,6 +1,6 @@
-#!/usr/bin/env elixir
-
 defmodule Day01 do
+  use Advent
+
   def line(str) do
     {left, right} = digits(str)
     left <> right
@@ -22,11 +22,15 @@ defmodule Day01 do
 
   defp combine(new, {"0", "0"}), do: {new, new}
   defp combine(new, {left, _}), do: {left, new}
-end
 
-IO.stream(:stdio, :line)
-|> Stream.map(&String.trim(&1))
-|> Stream.map(&Day01.line(&1))
-|> Stream.map(&String.to_integer(&1))
-|> Enum.sum()
-|> IO.puts()
+  def part1(_io) do
+  end
+
+  def part2(io) do
+    io
+    |> Stream.map(&String.trim(&1))
+    |> Stream.map(&Day01.line(&1))
+    |> Stream.map(&String.to_integer(&1))
+    |> Enum.sum()
+  end
+end
