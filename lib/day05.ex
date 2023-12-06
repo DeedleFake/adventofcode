@@ -123,7 +123,7 @@ defmodule Day05 do
     |> Enum.min()
   end
 
-  defp part2(io) do
+  def part2(io) do
     io
     |> Enum.map(&String.trim/1)
     |> Day05.Almanac.parse()
