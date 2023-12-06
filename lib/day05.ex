@@ -5,7 +5,7 @@ defmodule Day05 do
     defstruct dst: 0, src: 0, length: 0
 
     def parse(str) do
-      [first, second, third] = Day05.parse_nums(str)
+      [first, second, third] = Advent.parse_nums(str)
 
       %Mapping{
         dst: first,
@@ -52,7 +52,7 @@ defmodule Day05 do
               maps: []
 
     def add_seeds(a, seeds) when is_binary(seeds),
-      do: add_seeds(a, Enum.reverse(Day05.parse_nums(seeds)))
+      do: add_seeds(a, Enum.reverse(Advent.parse_nums(seeds)))
 
     def add_seeds(a, [seed | seeds]), do: add_seeds(add_seed(a, seed), seeds)
     def add_seeds(a, []), do: a
@@ -101,17 +101,6 @@ defmodule Day05 do
 
     defp expand_ranges([start, length | rem], ranges),
       do: expand_ranges(rem, [start..(start + length - 1)//1 | ranges])
-  end
-
-  def parse_nums(str, nums \\ [])
-  def parse_nums("", nums), do: Enum.reverse(nums)
-  def parse_nums(" " <> rem, nums), do: parse_nums(rem, nums)
-
-  def parse_nums(str, nums) do
-    case Integer.parse(str) do
-      {v, rem} -> parse_nums(rem, [v | nums])
-      :error -> nums
-    end
   end
 
   def part1(io) do

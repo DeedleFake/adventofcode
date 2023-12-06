@@ -20,4 +20,15 @@ defmodule Advent do
       end
     end
   end
+
+  def parse_nums(str, nums \\ [])
+  def parse_nums("", nums), do: Enum.reverse(nums)
+  def parse_nums(" " <> rem, nums), do: parse_nums(rem, nums)
+
+  def parse_nums(str, nums) do
+    case Integer.parse(str) do
+      {v, rem} -> parse_nums(rem, [v | nums])
+      :error -> nums
+    end
+  end
 end
