@@ -4,14 +4,14 @@ defmodule Day07 do
   def parse(lines, result \\ [])
   def parse([], result), do: Enum.reverse(result)
 
-  def parse([<<cards::binary-(8 * 5), " ", score::binary>> | lines], result) do
-    cards = cards |> String.trim() |> String.to_charlist() |> Enum.map(&card_value/1)
+  def parse([<<hand::binary-(8 * 5), " ", score::binary>> | lines], result) do
+    hand = hand |> String.trim() |> String.to_charlist() |> Enum.map(&card_value/1)
     score = score |> String.trim() |> String.to_integer()
 
-    parse(lines, [{cards, score} | result])
+    parse(lines, [{hand, score} | result])
   end
 
-  def rank(cards), do: cards |> Enum.sort() |> rank_value()
+  def rank(hand), do: hand |> Enum.sort() |> rank_value()
 
   defp rank_value([a, a, a, a, a]), do: 7
   defp rank_value([a, a, a, a, _]), do: 6
@@ -30,9 +30,9 @@ defmodule Day07 do
   defp rank_value([_, _, _, a, a]), do: 2
   defp rank_value([_, _, _, _, _]), do: 1
 
-  def hand_sorter(c1, c2) do
-    r1 = rank(c1)
-    r2 = rank(c2)
+  def hand_sorter({c1, j1}, {c2, j2}) do
+    r1 = rank(j1)
+    r2 = rank(j2)
 
     cond do
       r1 < r2 -> true
@@ -41,30 +41,60 @@ defmodule Day07 do
     end
   end
 
-  defp card_value(?A), do: 13
-  defp card_value(?K), do: 12
-  defp card_value(?Q), do: 11
-  defp card_value(?J), do: 10
-  defp card_value(?T), do: 9
-  defp card_value(?9), do: 8
-  defp card_value(?8), do: 7
-  defp card_value(?7), do: 6
-  defp card_value(?6), do: 5
-  defp card_value(?5), do: 4
-  defp card_value(?4), do: 3
-  defp card_value(?3), do: 2
-  defp card_value(?2), do: 1
+  def hand_sorter(c1, c2), do: hand_sorter({c1, c1}, {c2, c2})
+
+  def card_value(?A), do: 13
+  def card_value(?K), do: 12
+  def card_value(?Q), do: 11
+  def card_value(?J), do: 10
+  def card_value(?T), do: 9
+  def card_value(?9), do: 8
+  def card_value(?8), do: 7
+  def card_value(?7), do: 6
+  def card_value(?6), do: 5
+  def card_value(?5), do: 4
+  def card_value(?4), do: 3
+  def card_value(?3), do: 2
+  def card_value(?2), do: 1
+
+  def to_joker(10), do: 0
+  def to_joker(c), do: c
+
+  def apply_jokers(hand) do
+    hand
+    |> Stream.reject(&(&1 == 0))
+    |> Stream.map(fn c ->
+      hand
+      |> Enum.map(fn
+        0 -> c
+        e -> e
+      end)
+    end)
+    |> Enum.max(&hand_sorter/2, fn -> hand end)
+  end
+
+  defp hands_to_ranked_scores(hands) do
+    hands
+    |> Enum.sort(fn {c1, _}, {c2, _} -> hand_sorter(c1, c2) end)
+    |> Stream.with_index()
+    |> Stream.map(fn {{_, score}, i} -> score * (i + 1) end)
+  end
 
   def part1(io) do
     io
     |> Enum.map(&String.trim/1)
     |> parse()
-    |> Enum.sort(fn {c1, _}, {c2, _} -> hand_sorter(c1, c2) end)
-    |> Stream.with_index()
-    |> Stream.map(fn {{_, score}, i} -> score * (i + 1) end)
+    |> hands_to_ranked_scores()
     |> Enum.sum()
   end
 
   def part2(io) do
+    io
+    |> Enum.map(&String.trim/1)
+    |> parse()
+    |> Stream.map(fn {hand, score} -> {hand |> Enum.map(&to_joker/1), score} end)
+    |> Stream.map(fn {hand, score} -> {{hand, apply_jokers(hand)}, score} end)
+    |> hands_to_ranked_scores()
+    |> Enum.sum()
   end
 end
