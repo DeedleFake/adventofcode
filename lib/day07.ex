@@ -13,7 +13,9 @@ defmodule Day07 do
 
   def rank(cards), do: cards |> Enum.sort() |> rank_value()
 
-  defp rank_value([a, a, a, a, a]), do: 6
+  defp rank_value([a, a, a, a, a]), do: 7
+  defp rank_value([a, a, a, a, _]), do: 6
+  defp rank_value([_, a, a, a, a]), do: 6
   defp rank_value([a, a, a, b, b]), do: 5
   defp rank_value([a, a, b, b, b]), do: 5
   defp rank_value([a, a, a, _, _]), do: 4
