@@ -30,7 +30,7 @@ defmodule Day07 do
   defp rank_value([_, _, _, a, a]), do: 2
   defp rank_value([_, _, _, _, _]), do: 1
 
-  def hand_sorter({c1, j1}, {c2, j2}) do
+  def compare_hands({c1, j1}, {c2, j2}) do
     r1 = rank(j1)
     r2 = rank(j2)
 
@@ -41,7 +41,7 @@ defmodule Day07 do
     end
   end
 
-  def hand_sorter(c1, c2), do: hand_sorter({c1, c1}, {c2, c2})
+  def compare_hands(c1, c2), do: compare_hands({c1, c1}, {c2, c2})
 
   def card_value(?A), do: 13
   def card_value(?K), do: 12
@@ -70,12 +70,12 @@ defmodule Day07 do
         e -> e
       end)
     end)
-    |> Enum.max(&hand_sorter/2, fn -> hand end)
+    |> Enum.max(&(!compare_hands(&1, &2)), fn -> hand end)
   end
 
   defp hands_to_ranked_scores(hands) do
     hands
-    |> Enum.sort(fn {c1, _}, {c2, _} -> hand_sorter(c1, c2) end)
+    |> Enum.sort(fn {c1, _}, {c2, _} -> compare_hands(c1, c2) end)
     |> Stream.with_index()
     |> Stream.map(fn {{_, score}, i} -> score * (i + 1) end)
   end
