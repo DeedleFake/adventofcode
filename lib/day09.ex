@@ -1,15 +1,15 @@
 defmodule Day09 do
   use Advent
 
-  def next_num(sequence) do
-    subs = gen_subs([sequence])
-
+  def next_num(subs) do
     for sub <- subs |> Stream.drop(1), reduce: 0 do
       prev -> List.last(sub) + prev
     end
   end
 
-  defp gen_subs([bottom | sequences]) do
+  def gen_subs(sequence) when not is_list(hd(sequence)), do: gen_subs([sequence])
+
+  def gen_subs([bottom | sequences]) do
     if bottom |> Enum.all?(&(&1 == 0)) do
       [bottom | sequences]
     else
@@ -25,7 +25,7 @@ defmodule Day09 do
 
   def part1(io) do
     for line <- io do
-      String.trim(line) |> parse_nums() |> next_num()
+      String.trim(line) |> parse_nums() |> gen_subs() |> next_num()
     end
     |> Enum.sum()
   end
