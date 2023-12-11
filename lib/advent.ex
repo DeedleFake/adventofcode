@@ -3,6 +3,8 @@ defmodule Advent do
     module = List.last(Module.split(__CALLER__.module))
 
     quote do
+      import unquote(__MODULE__)
+
       def part1(suffix \\ "input")
 
       def part1(suffix) when is_binary(suffix) do
