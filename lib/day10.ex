@@ -3,6 +3,23 @@ defmodule Day10 do
 
   defmodule PipeMap do
     defstruct start: nil, pipes: %{}
+
+    defimpl String.Chars do
+      def to_string(map) do
+        {{mx, _}, _} = map.pipes |> Enum.max_by(fn {{x, _}, _} -> x end)
+        {{_, my}, _} = map.pipes |> Enum.max_by(fn {{_, y}, _} -> y end)
+
+        for y <- 0..my, x <- 0..mx do
+          if map.start == {x, y} do
+            ?S
+          else
+            map.pipes[{x, y}] || ?.
+          end
+        end
+        |> Stream.chunk_every(my + 1)
+        |> Enum.join("\n")
+      end
+    end
   end
 
   def parse_map(lines) do
