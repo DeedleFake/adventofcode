@@ -85,9 +85,43 @@ defmodule Day10 do
     %PipeMap{map | start: new_start, pipes: new_pipes}
   end
 
+  defp successors(pipes, {x, y}) do
+    case pipes[{x, y}] do
+      ?| -> {{x, y - 1}, {x, y + 1}}
+      ?J -> {{x - 1, y}, {x, y - 1}}
+      ?L -> {{x + 1, y}, {x, y - 1}}
+      ?7 -> {{x - 1, y}, {x, y + 1}}
+      ?F -> {{x + 1, y}, {x, y + 1}}
+      ?- -> {{x - 1, y}, {x + 1, y}}
+    end
+  end
+
+  defp loop_size(start, pipes) do
+    [next | _] = successors(pipes, start) |> Tuple.to_list()
+
+    loop_size(start, pipes, %{
+      cur: next,
+      last: start,
+      size: 1
+    })
+  end
+
+  defp loop_size(start, pipes, state) do
+    [next | _] =
+      successors(pipes, state.cur)
+      |> Tuple.to_list()
+      |> Enum.reject(&(&1 == state.last))
+
+    if next == start do
+      state.size + 1
+    else
+      loop_size(start, pipes, %{state | cur: next, last: state.cur, size: state.size + 1})
+    end
+  end
+
   def part1(io) do
-    map = io |> Stream.map(&String.trim/1) |> parse_map()
-    map.pipes |> pipes_to_string()
+    map = io |> Stream.map(&String.trim/1) |> parse_map() |> dbg()
+    div(loop_size(map.start, map.pipes), 2)
   end
 
   def part2(io) do
