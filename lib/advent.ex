@@ -33,4 +33,11 @@ defmodule Advent do
       :error -> nums
     end
   end
+
+  def combinations(enum) do
+    for {v1, i} <- enum |> Stream.with_index() |> Stream.drop(1),
+        v2 <- enum |> Stream.take(i) do
+      {v1, v2}
+    end
+  end
 end
