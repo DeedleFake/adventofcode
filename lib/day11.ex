@@ -13,7 +13,7 @@ defmodule Day11 do
     |> Enum.to_list()
   end
 
-  def expand(map) do
+  def expand(map, amount \\ 1) do
     {{minx, miny}, {maxx, maxy}} = bounds(map)
 
     map =
@@ -23,7 +23,7 @@ defmodule Day11 do
         map ->
           map
           |> Stream.map(fn
-            {x, y} when x > split -> {x + 1, y}
+            {x, y} when x > split -> {x + amount, y}
             g -> g
           end)
       end
@@ -36,7 +36,7 @@ defmodule Day11 do
         map ->
           map
           |> Stream.map(fn
-            {x, y} when y > split -> {x, y + 1}
+            {x, y} when y > split -> {x, y + amount}
             g -> g
           end)
       end
@@ -82,5 +82,11 @@ defmodule Day11 do
   end
 
   def part2(input) do
+    input
+    |> Stream.map(&String.trim/1)
+    |> parse()
+    |> expand(1_000_000 - 1)
+    |> distances()
+    |> Enum.sum()
   end
 end
