@@ -2,32 +2,46 @@
 
 defmodule Day04 do
   def part1(input) do
-    lines =
-      input
-      |> String.split("\n", trim: true)
+    board = parse(input)
 
-    count(lines) + count(transpose(lines))
+    for {start, _} <- board, reduce: 0 do
+      count ->
+        ur = get(board, start, {1, -1}, 4) |> xmas?() |> to_int()
+        r = get(board, start, {1, 0}, 4) |> xmas?() |> to_int()
+        dr = get(board, start, {1, 1}, 4) |> xmas?() |> to_int()
+        d = get(board, start, {0, 1}, 4) |> xmas?() |> to_int()
+        count + ur + r + dr + d
+    end
   end
 
   def part2(input) do
     :not_implemented
   end
 
-  defp count(lines, result \\ 0)
-  defp count([], result), do: result
-  defp count([line | lines], result), do: count(lines, result + count_line(line))
-
-  defp count_line(line, result \\ 0)
-  defp count_line("", result), do: result
-  defp count_line("XMAS" <> line, result), do: count_line("MAS" <> line, result + 1)
-  defp count_line("SAMX" <> line, result), do: count_line("AMX" <> line, result + 1)
-  defp count_line(<<_::8, line::binary>>, result), do: count_line(line, result)
-
-  defp transpose(lines) do
-    lines
-    |> Stream.map(&String.split(&1, "", trim: true))
-    |> Enum.zip_with(&List.to_string/1)
+  defp parse(input) do
+    input
+    |> String.split("\n", trim: true)
+    |> Stream.with_index()
+    |> Stream.flat_map(fn {line, y} ->
+      String.split(line, "", trim: true)
+      |> Stream.with_index()
+      |> Stream.map(fn {c, x} -> {{x, y}, c} end)
+    end)
+    |> Map.new()
   end
+
+  defp get(board, start, step, count, result \\ [])
+  defp get(_board, _start, _step, 0, result), do: Enum.reverse(result)
+
+  defp get(board, {x, y} = start, {sx, sy} = step, count, result),
+    do: get(board, {x + sx, y + sy}, step, count - 1, [board[start] | result])
+
+  defp xmas?(["X", "M", "A", "S"]), do: true
+  defp xmas?(["S", "A", "M", "X"]), do: true
+  defp xmas?(_), do: false
+
+  defp to_int(true), do: 1
+  defp to_int(false), do: 0
 end
 
 input = IO.read(:eof)
