@@ -20,9 +20,12 @@ defmodule Day04 do
 
     for {{cx, cy}, _} <- board, reduce: 0 do
       count ->
-        left = get(board, {cx - 1, cy + 1}, {1, -1}, 3) |> mas?()
-        right = get(board, {cx - 1, cy - 1}, {1, 1}, 3) |> mas?()
-        if left and right, do: count + 1, else: count
+        found =
+          [{1, -1}, {1, 1}]
+          |> Stream.map(fn {sx, sy} -> get(board, {cx - sx, cy - sy}, {sx, sy}, 3) end)
+          |> Enum.all?(&mas?/1)
+
+        if found, do: count + 1, else: count
     end
   end
 
