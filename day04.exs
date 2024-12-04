@@ -6,11 +6,12 @@ defmodule Day04 do
 
     for {start, _} <- board, reduce: 0 do
       count ->
-        ur = get(board, start, {1, -1}, 4) |> xmas?() |> to_int()
-        r = get(board, start, {1, 0}, 4) |> xmas?() |> to_int()
-        dr = get(board, start, {1, 1}, 4) |> xmas?() |> to_int()
-        d = get(board, start, {0, 1}, 4) |> xmas?() |> to_int()
-        count + ur + r + dr + d
+        found =
+          [{1, -1}, {1, 0}, {1, 1}, {0, 1}]
+          |> Stream.map(&get(board, start, &1, 4))
+          |> Enum.count(&xmas?/1)
+
+        count + found
     end
   end
 
@@ -50,9 +51,6 @@ defmodule Day04 do
   defp mas?(["M", "A", "S"]), do: true
   defp mas?(["S", "A", "M"]), do: true
   defp mas?(_), do: false
-
-  defp to_int(true), do: 1
-  defp to_int(false), do: 0
 end
 
 input = IO.read(:eof)
