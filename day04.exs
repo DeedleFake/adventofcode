@@ -15,7 +15,14 @@ defmodule Day04 do
   end
 
   def part2(input) do
-    :not_implemented
+    board = parse(input)
+
+    for {{cx, cy}, _} <- board, reduce: 0 do
+      count ->
+        left = get(board, {cx - 1, cy + 1}, {1, -1}, 3) |> mas?()
+        right = get(board, {cx - 1, cy - 1}, {1, 1}, 3) |> mas?()
+        if left and right, do: count + 1, else: count
+    end
   end
 
   defp parse(input) do
@@ -39,6 +46,10 @@ defmodule Day04 do
   defp xmas?(["X", "M", "A", "S"]), do: true
   defp xmas?(["S", "A", "M", "X"]), do: true
   defp xmas?(_), do: false
+
+  defp mas?(["M", "A", "S"]), do: true
+  defp mas?(["S", "A", "M"]), do: true
+  defp mas?(_), do: false
 
   defp to_int(true), do: 1
   defp to_int(false), do: 0
