@@ -6,13 +6,18 @@ defmodule Day05 do
 
     for printing <- printings, valid?(printing, rules), reduce: 0 do
       total ->
-        i = floor(length(printing) / 2)
-        total + Enum.at(printing, i)
+        total + middle(printing)
     end
   end
 
   def part2(input) do
-    :not_implemented
+    {rules, printings} = input |> parse()
+
+    for printing <- printings, !valid?(printing, rules), reduce: 0 do
+      total ->
+        printing = Enum.sort(printing, &less?(&1, &2, rules))
+        total + middle(printing)
+    end
   end
 
   defp parse(input) do
@@ -48,10 +53,17 @@ defmodule Day05 do
 
   defp page_valid?(page, printing, rules) do
     printing
-    |> Enum.all?(fn subsequent ->
-      allowed = rules[subsequent]
-      allowed && page in allowed
-    end)
+    |> Enum.all?(&less?(page, &1, rules))
+  end
+
+  defp less?(p1, p2, rules) do
+    allowed = Map.get(rules, p2, [])
+    allowed != [] and p1 in allowed
+  end
+
+  defp middle(v) do
+    i = floor(length(v) / 2)
+    Enum.at(v, i)
   end
 end
 
