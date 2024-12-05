@@ -46,7 +46,7 @@ defmodule Day05 do
     {rules, printings}
   end
 
-  defp valid?([], rules), do: true
+  defp valid?([], _rules), do: true
 
   defp valid?([page | printing], rules),
     do: page_valid?(page, printing, rules) and valid?(printing, rules)
@@ -57,8 +57,8 @@ defmodule Day05 do
   end
 
   defp less?(p1, p2, rules) do
-    allowed = Map.get(rules, p2, [])
-    allowed != [] and p1 in allowed
+    allowed = Map.get(rules, p2, false)
+    allowed && p1 in allowed
   end
 
   defp middle(v) do
