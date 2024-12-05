@@ -10,24 +10,27 @@ defmodule Generate do
     File.chmod!(path, 0o755)
   end
 
+  @code EEx.compile_string("""
+        #!/usr/bin/env elixir
+
+        defmodule Day<%= day %> do
+          def part1(input) do
+            :not_implemented
+          end
+
+          def part2(input) do
+            :not_implemented
+          end
+        end
+
+        input = IO.read(:eof)
+        IO.puts("Part 1: \#{Day<%= day %>.part1(input)}")
+        IO.puts("Part 2: \#{Day<%= day %>.part2(input)}")
+        """)
+
   defp code(day) do
-    """
-    #!/usr/bin/env elixir
-
-    defmodule Day#{day} do
-      def part1(input) do
-        :not_implemented
-      end
-
-      def part2(input) do
-        :not_implemented
-      end
-    end
-
-    input = IO.read(:eof)
-    IO.puts("Part 1: \#{Day#{day}.part1(input)}")
-    IO.puts("Part 2: \#{Day#{day}.part2(input)}")
-    """
+    {code, _} = Code.eval_quoted(@code, day: day)
+    code
   end
 end
 
