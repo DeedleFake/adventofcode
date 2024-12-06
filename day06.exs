@@ -8,11 +8,18 @@ defmodule Day06 do
 
   def part1(input) do
     map = parse(input)
-    patrol(map) |> Stream.uniq() |> Enum.count()
+    patrol(map) |> Stream.uniq_by(&elem(&1, 1)) |> Enum.count()
   end
 
   def part2(input) do
-    :not_implemented
+    %Map{guard: {_, start}} = map = parse(input)
+    path = patrol(map) |> Stream.uniq_by(&elem(&1, 1))
+
+    for {_, loc} <- path, loc != start, reduce: 0 do
+      total ->
+        map = %Map{map | obstacles: MapSet.put(map.obstacles, loc)}
+        if loops?(map), do: total + 1, else: total
+    end
   end
 
   defp parse(input) do
@@ -51,13 +58,11 @@ defmodule Day06 do
     }
   end
 
-  defp patrol(%Map{guard: {_, start}} = map), do: patrol(%{map: map, path: [start]})
-
-  defp patrol(%{map: map, path: path} = state) do
+  defp patrol({map, path}) do
     %Map{guard: {_, loc}} = map
 
     if in_bounds?(loc, map.bounds) do
-      state
+      {map, path}
       |> advance()
       |> patrol()
     else
@@ -65,14 +70,35 @@ defmodule Day06 do
     end
   end
 
-  defp advance(%{map: map, path: path}) do
-    {_, loc} = map.guard
+  defp patrol(%Map{} = map), do: patrol({map, [map.guard]})
+
+  defp loops?({map, path}) do
+    %Map{guard: {_, loc}} = map
+
+    if in_bounds?(loc, map.bounds) do
+      if map.guard in tl(path) do
+        true
+      else
+        {map, path}
+        |> advance()
+        |> loops?()
+      end
+    else
+      false
+    end
+  end
+
+  defp loops?(%Map{} = map), do: loops?({map, [map.guard]})
+
+  defp advance({map, path}) do
     next = next_loc(map.guard)
 
     if next in map.obstacles do
-      advance(%{map: %Map{map | guard: turn(map.guard)}, path: path})
+      guard = turn(map.guard)
+      advance({%Map{map | guard: guard}, [guard | path]})
     else
-      %{map: %Map{map | guard: move(map.guard, next)}, path: [next | path]}
+      guard = move(map.guard, next)
+      {%Map{map | guard: guard}, [guard | path]}
     end
   end
 
