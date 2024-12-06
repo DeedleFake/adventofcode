@@ -45,32 +45,34 @@ defmodule Day06 do
     height = length(Enum.at(lines, 0))
 
     %Map{
-      guard: [{:up, guard}],
+      guard: {:up, guard},
       obstacles: obstacles,
       bounds: {width, height}
     }
   end
 
-  defp patrol(map) do
-    %Map{guard: [{_, loc} | _]} = map
+  defp patrol(%Map{guard: {_, start}} = map), do: patrol(%{map: map, path: [start]})
+
+  defp patrol(%{map: map, path: path} = state) do
+    %Map{guard: {_, loc}} = map
 
     if in_bounds?(loc, map.bounds) do
-      map
+      state
       |> advance()
       |> patrol()
     else
-      tl(map.guard) |> Enum.reverse()
+      tl(path) |> Enum.reverse()
     end
   end
 
-  defp advance(map) do
-    [{_, loc} = guard | path] = map.guard
-    next = next_loc(guard)
+  defp advance(%{map: map, path: path}) do
+    {_, loc} = map.guard
+    next = next_loc(map.guard)
 
     if next in map.obstacles do
-      advance(%Map{map | guard: [turn(guard) | path]})
+      advance(%{map: %Map{map | guard: turn(map.guard)}, path: path})
     else
-      %Map{map | guard: [move(guard, next), loc | path]}
+      %{map: %Map{map | guard: move(map.guard, next)}, path: [next | path]}
     end
   end
 
