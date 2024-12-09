@@ -10,12 +10,12 @@ defmodule Day08 do
     map = parse(input)
 
     antis =
-      for {{x1, y1}, f1} <- map.an,
-          {{x2, y2}, f2} <- map.an,
+      for {a1, f1} <- map.an,
+          {a2, f2} <- map.an,
           f1 == f2,
-          {x1, y1} != {x2, y2},
+          a1 != a2,
           into: MapSet.new() do
-        {x1 - (x2 - x1), y1 - (y2 - y1)}
+        shift(a1, a2)
       end
       |> MapSet.filter(&in_bounds?(&1, map.bounds))
 
@@ -23,7 +23,18 @@ defmodule Day08 do
   end
 
   def part2(input) do
-    :not_implemented
+    map = parse(input)
+
+    antis =
+      for {a1, f1} <- map.an,
+          {a2, f2} <- map.an,
+          f1 == f2,
+          a1 != a2,
+          reduce: MapSet.new() do
+        antis -> add_antis(antis, a1, a2, map.bounds) |> MapSet.put(a1)
+      end
+
+    MapSet.size(antis)
   end
 
   defp parse(input) do
@@ -48,6 +59,36 @@ defmodule Day08 do
   end
 
   defp in_bounds?({x, y}, {w, h}), do: x >= 0 and x < w and y >= 0 and y < h
+
+  defp shift({x1, y1}, {x2, y2}), do: {x1 - (x2 - x1), y1 - (y2 - y1)}
+
+  defp add_antis(antis, a1, a2, bounds) do
+    next = shift(a1, a2)
+
+    if in_bounds?(next, bounds) do
+      antis = MapSet.put(antis, next)
+      add_antis(antis, next, a1, bounds)
+    else
+      antis
+    end
+  end
+
+  defp print_city(%City{} = city, antis \\ MapSet.new()) do
+    {w, h} = city.bounds
+    an = city.an |> Map.new()
+
+    for y <- 0..h do
+      for x <- 0..w do
+        loc = {x, y}
+        c = if loc in antis, do: "#", else: [Map.get(an, loc, ?.)]
+        IO.write(c)
+      end
+
+      IO.write("\n")
+    end
+
+    :ok
+  end
 end
 
 input = IO.read(:eof)
