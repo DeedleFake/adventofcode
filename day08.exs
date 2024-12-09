@@ -9,15 +9,17 @@ defmodule Day08 do
   def part1(input) do
     map = parse(input)
 
-    for {{x1, y1}, f1} <- map.an,
-        {{x2, y2}, f2} <- map.an,
-        f1 == f2,
-        {x1, y1} != {x2, y2},
-        reduce: 0 do
-      total ->
-        anti = {x1 - (x2 - x1), y1 - (y2 - y1)}
-        if in_bounds?(anti, map.bounds), do: total + 1, else: total
-    end
+    antis =
+      for {{x1, y1}, f1} <- map.an,
+          {{x2, y2}, f2} <- map.an,
+          f1 == f2,
+          {x1, y1} != {x2, y2},
+          into: MapSet.new() do
+        {x1 - (x2 - x1), y1 - (y2 - y1)}
+      end
+      |> MapSet.filter(&in_bounds?(&1, map.bounds))
+
+    MapSet.size(antis)
   end
 
   def part2(input) do
@@ -34,8 +36,8 @@ defmodule Day08 do
       |> Stream.with_index()
       |> Enum.flat_map(fn {line, y} ->
         line
-        |> Stream.reject(&(&1 == ?.))
         |> Stream.with_index()
+        |> Stream.reject(&match?({?., _}, &1))
         |> Stream.map(fn {f, x} -> {{x, y}, f} end)
       end)
 
