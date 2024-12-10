@@ -10,7 +10,11 @@ defmodule Day10 do
   end
 
   def part2(input) do
-    :not_implemented
+    map = parse(input)
+
+    for {start, h} <- map, h == 0, reduce: 0 do
+      total -> total + MapSet.size(rating(map, [start]))
+    end
   end
 
   defp parse(input) do
@@ -35,12 +39,28 @@ defmodule Day10 do
 
   defp score(map, cur, peaks) when :erlang.map_get(cur, map) == 9, do: MapSet.put(peaks, cur)
 
-  defp score(map, {x, y} = cur, peaks) do
+  defp score(map, cur, peaks) do
+    for next <- successors(map, cur), reduce: peaks do
+      peaks -> score(map, next, peaks)
+    end
+  end
+
+  defp rating(map, trail, trails \\ MapSet.new())
+
+  defp rating(map, [cur | _] = trail, trails) when :erlang.map_get(cur, map) == 9,
+    do: MapSet.put(trails, trail)
+
+  defp rating(map, [cur | _] = trail, trails) do
+    for next <- successors(map, cur), reduce: trails do
+      trails -> rating(map, [next | trail], trails)
+    end
+  end
+
+  defp successors(map, {x, y} = cur) do
     h = map[cur]
 
     [{x - 1, y}, {x + 1, y}, {x, y - 1}, {x, y + 1}]
     |> Stream.filter(fn next -> map[next] == h + 1 end)
-    |> Enum.reduce(peaks, fn next, peaks -> score(map, next, peaks) end)
   end
 end
 
