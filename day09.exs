@@ -19,9 +19,12 @@ defmodule Day09 do
     new_layout =
       Stream.zip(data, free)
       |> Stream.take_while(fn {{_, from}, to} -> to < from end)
-      |> Enum.reduce(layout, fn {{d, from}, to}, layout ->
-        layout |> List.replace_at(to, d) |> List.replace_at(from, -1)
+      |> Enum.reduce(to_counters(layout), fn {{d, from}, to}, layout ->
+        :counters.put(layout, to, d)
+        :counters.put(layout, from, -1)
+        layout
       end)
+      |> stream_counters()
 
     checksum(new_layout)
   end
@@ -48,6 +51,25 @@ defmodule Day09 do
     |> Stream.with_index()
     |> Stream.map(fn {d, i} -> d * i end)
     |> Enum.sum()
+  end
+
+  defp to_counters(nums) do
+    counters = :counters.new(length(nums), [:write_concurrency])
+
+    for {n, i} <- Stream.with_index(nums), reduce: counters do
+      counters ->
+        :counters.put(counters, i + 1, n)
+        counters
+    end
+  end
+
+  defp stream_counters(counters) do
+    %{size: size} = :counters.info(counters)
+
+    Stream.unfold(1, fn
+      i when i > size -> nil
+      i -> {:counters.get(counters, i), i + 1}
+    end)
   end
 end
 
