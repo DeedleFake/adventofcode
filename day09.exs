@@ -4,24 +4,24 @@ defmodule Day09 do
   def part1(input) do
     layout = parse(input)
 
-    free =
-      layout
-      |> Stream.with_index()
-      |> Stream.filter(&match?({-1, _}, &1))
-      |> Stream.map(&elem(&1, 1))
-
     data =
       layout
       |> Stream.with_index()
       |> Stream.reject(&match?({-1, _}, &1))
       |> Enum.reverse()
 
+    free =
+      layout
+      |> Stream.with_index()
+      |> Stream.filter(&match?({-1, _}, &1))
+      |> Stream.map(&elem(&1, 1))
+
     new_layout =
       Stream.zip(data, free)
       |> Stream.take_while(fn {{_, from}, to} -> to < from end)
       |> Enum.reduce(to_counters(layout), fn {{d, from}, to}, layout ->
-        :counters.put(layout, to, d)
-        :counters.put(layout, from, -1)
+        :counters.put(layout, to + 1, d)
+        :counters.put(layout, from + 1, -1)
         layout
       end)
       |> stream_counters()
@@ -30,7 +30,32 @@ defmodule Day09 do
   end
 
   def part2(input) do
-    :not_implemented
+    layout = parse(input)
+
+    data = contiguous(layout) |> Stream.filter(fn {_, _, d} -> d >= 0 end) |> Enum.reverse()
+
+    new_layout =
+      for {from, fsize, d} <- data, reduce: to_counters(layout) do
+        counters ->
+          counters
+          |> stream_counters()
+          |> contiguous()
+          |> Stream.filter(fn {_, _, d} -> d < 0 end)
+          |> Stream.take_while(fn {to, _, _} -> to < from end)
+          |> Enum.find(fn {_, s, _} -> s >= fsize end)
+          |> case do
+            {to, _, _} ->
+              put_all_counters(counters, (to + 1)..(to + fsize)//1, d)
+              put_all_counters(counters, (from + 1)..(from + fsize)//1, -1)
+              counters
+
+            nil ->
+              counters
+          end
+      end
+      |> stream_counters()
+
+    checksum(new_layout)
   end
 
   defp parse(input) do
@@ -47,10 +72,17 @@ defmodule Day09 do
 
   defp checksum(data) do
     data
-    |> Stream.filter(&(&1 >= 0))
     |> Stream.with_index()
+    |> Stream.reject(&match?({-1, _}, &1))
     |> Stream.map(fn {d, i} -> d * i end)
     |> Enum.sum()
+  end
+
+  defp contiguous(layout) do
+    layout
+    |> Stream.with_index()
+    |> Stream.chunk_by(&elem(&1, 0))
+    |> Stream.map(fn [{d, i} | _] = f -> {i, length(f), d} end)
   end
 
   defp to_counters(nums) do
@@ -70,6 +102,14 @@ defmodule Day09 do
       i when i > size -> nil
       i -> {:counters.get(counters, i), i + 1}
     end)
+  end
+
+  defp put_all_counters(counters, range, data) do
+    for i <- range do
+      :counters.put(counters, i, data)
+    end
+
+    :ok
   end
 end
 
