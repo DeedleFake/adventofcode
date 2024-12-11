@@ -1,28 +1,22 @@
 #!/usr/bin/env elixir
 
+Mix.install([:memoize])
+
 defmodule Day11 do
+  use Memoize
+
   import Integer, only: [is_even: 1]
 
   def part1(input) do
-    stones = parse(input)
-
-    stones =
-      for _ <- 1..25//1, reduce: stones do
-        stones -> stones |> Stream.flat_map(&evolve/1)
-      end
-
-    Enum.count(stones)
+    parse(input)
+    |> Stream.map(&evolve(&1, 25))
+    |> Enum.sum()
   end
 
   def part2(input) do
-    stones = parse(input)
-
-    stones =
-      for _ <- 1..75//1, reduce: stones do
-        stones -> stones |> Stream.flat_map(&evolve/1)
-      end
-
-    Enum.count(stones)
+    parse(input)
+    |> Stream.map(&evolve(&1, 75))
+    |> Enum.sum()
   end
 
   defp parse(input) do
@@ -31,21 +25,21 @@ defmodule Day11 do
     |> Enum.map(&String.to_integer/1)
   end
 
-  defp evolve(0), do: [1]
+  defmemop(evolve(_stone, 0), do: 1)
+  defmemop(evolve(0, iter), do: evolve(1, iter - 1))
 
-  defp evolve(stone) do
+  defmemop evolve(stone, iter) do
     len = floor(:math.log10(stone) + 1)
-    evolve(stone, len)
+
+    if is_even(len) do
+      {left, right} =
+        stone |> Integer.digits() |> Enum.split(div(len, 2))
+
+      evolve(Integer.undigits(left), iter - 1) + evolve(Integer.undigits(right), iter - 1)
+    else
+      evolve(stone * 2024, iter - 1)
+    end
   end
-
-  defp evolve(stone, len) when is_even(len) do
-    {left, right} =
-      stone |> Integer.digits() |> Enum.split(div(len, 2))
-
-    [Integer.undigits(left), Integer.undigits(right)]
-  end
-
-  defp evolve(stone, _len), do: [stone * 2024]
 end
 
 input = IO.read(:eof)
