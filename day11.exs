@@ -34,7 +34,7 @@ defmodule Day11 do
   defp evolve(0), do: [1]
 
   defp evolve(stone) do
-    len = :math.log10(stone + 1) |> ceil()
+    len = floor(:math.log10(stone) + 1)
     evolve(stone, len)
   end
 
