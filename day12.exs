@@ -10,7 +10,11 @@ defmodule Day12 do
   end
 
   def part2(input) do
-    :not_implemented
+    garden = parse(input)
+
+    find_regions(garden)
+    |> Stream.map(&discounted_cost(&1, garden))
+    |> Enum.sum()
   end
 
   defp parse(input) do
@@ -34,12 +38,12 @@ defmodule Day12 do
         if already? do
           regions
         else
-          [scan_region(garden, loc, plant) | regions]
+          [scan_region(loc, plant, garden) | regions]
         end
     end
   end
 
-  defp scan_region(garden, loc, plant, region \\ MapSet.new()) do
+  defp scan_region(loc, plant, garden, region \\ MapSet.new()) do
     cond do
       garden[loc] != plant ->
         region
@@ -49,7 +53,7 @@ defmodule Day12 do
 
       true ->
         region = MapSet.put(region, loc)
-        Enum.reduce(neighbors(loc), region, &scan_region(garden, &1, plant, &2))
+        Enum.reduce(neighbors(loc), region, &scan_region(&1, plant, garden, &2))
     end
   end
 
@@ -64,14 +68,43 @@ defmodule Day12 do
 
   defp cost(region, garden), do: MapSet.size(region) * perimeter(region, garden)
 
+  defp discounted_cost(region, garden), do: MapSet.size(region) * num_sides(region, garden)
+
   defp perimeter(region, garden) do
+    edges(region, garden)
+    |> Enum.count()
+  end
+
+  defp num_sides(region, garden) do
+    edges(region, garden)
+    |> find_sides(region, garden)
+    |> Enum.count()
+  end
+
+  defp edges(region, garden) do
     region
     |> Stream.flat_map(fn loc ->
       loc
       |> neighbors()
       |> Stream.filter(&(garden[&1] != garden[loc]))
     end)
-    |> Enum.count()
+  end
+
+  defp find_sides(edges, region, garden) do
+    for loc <- edges, reduce: [] do
+      sides ->
+        already? = sides |> Enum.any?(&(loc in &1))
+
+        if already? do
+          sides
+        else
+          [scan_side(loc, edges, region, garden) | sides]
+        end
+    end
+  end
+
+  defp scan_side(loc, edges, region, garden, side \\ MapSet.new()) do
+    side
   end
 end
 
