@@ -33,7 +33,7 @@ defmodule Day12 do
   defp find_regions(garden) do
     for {loc, plant} <- garden, reduce: [] do
       regions ->
-        already? = regions |> Enum.any?(&(loc in &1))
+        already? = Enum.any?(regions, &(loc in &1))
 
         if already? do
           regions
@@ -87,25 +87,43 @@ defmodule Day12 do
       loc
       |> neighbors()
       |> Stream.filter(&(garden[&1] != garden[loc]))
+      |> Stream.map(&{loc, direction(loc, &1)})
     end)
   end
 
   defp find_sides(edges, region, garden) do
-    for loc <- edges, reduce: [] do
+    edge_types = Enum.group_by(edges, &elem(&1, 0), &elem(&1, 1))
+
+    for edge <- edges, reduce: [] do
       sides ->
-        already? = sides |> Enum.any?(&(loc in &1))
+        already? = Enum.any?(sides, &(edge in &1))
 
         if already? do
           sides
         else
-          [scan_side(loc, edges, region, garden) | sides]
+          [scan_side(edge, edge_types, region, garden) | sides]
         end
     end
   end
 
-  defp scan_side(loc, edges, region, garden, side \\ MapSet.new()) do
-    side
+  defp scan_side({loc, dir} = edge, edges, region, garden, side \\ MapSet.new()) do
+    if edge in side do
+      side
+    else
+      side = MapSet.put(side, edge)
+
+      neighbors(loc)
+      |> Stream.filter(&is_map_key(edges, &1))
+      |> Stream.flat_map(fn loc -> Stream.map(edges[loc], &{loc, &1}) end)
+      |> Stream.filter(&match?({_, ^dir}, &1))
+      |> Enum.reduce(side, &scan_side(&1, edges, region, garden, &2))
+    end
   end
+
+  defp direction({x1, _}, {x2, _}) when x2 > x1, do: :right
+  defp direction({x1, _}, {x2, _}) when x2 < x1, do: :left
+  defp direction({_, y1}, {_, y2}) when y2 > y1, do: :down
+  defp direction({_, y1}, {_, y2}) when y2 < y1, do: :up
 end
 
 input = IO.read(:eof)
