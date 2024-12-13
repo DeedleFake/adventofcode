@@ -14,13 +14,15 @@ defmodule Day13 do
         |> Enum.reduce(%{buttons: %{}}, &parse_line/2)
 
       buttons =
-        Nx.tensor([
-          Tuple.to_list(machine.buttons["A"]),
-          Tuple.to_list(machine.buttons["B"])
-        ])
+        Nx.f64(
+          [
+            Tuple.to_list(machine.buttons["A"]),
+            Tuple.to_list(machine.buttons["B"])
+          ]
+        )
         |> Nx.transpose()
 
-      prize = Nx.tensor(Tuple.to_list(machine.prize))
+      prize = Nx.f64(Tuple.to_list(machine.prize))
 
       %__MODULE__{buttons: buttons, prize: prize}
     end
@@ -55,7 +57,7 @@ defmodule Day13 do
   def part1(input) do
     parse(input)
     |> Stream.map(fn %{buttons: buttons, prize: prize} ->
-      solution = Nx.LinAlg.solve(buttons, prize) |> Nx.round() |> Nx.as_type(:s32)
+      solution = Nx.LinAlg.solve(buttons, prize) |> Nx.round() |> Nx.as_type(:s64)
       {buttons, prize, solution}
     end)
     |> Stream.filter(fn {buttons, prize, solution} ->
@@ -69,7 +71,22 @@ defmodule Day13 do
   end
 
   def part2(input) do
-    :not_implemented
+    parse(input)
+    |> Stream.map(fn machine ->
+      update_in(machine.prize, &Nx.add(&1, Nx.s64(10_000_000_000_000)))
+    end)
+    |> Stream.map(fn %{buttons: buttons, prize: prize} ->
+      solution = Nx.LinAlg.solve(buttons, prize) |> Nx.round() |> Nx.as_type(:s64)
+      {buttons, prize, solution}
+    end)
+    |> Stream.filter(fn {buttons, prize, solution} ->
+      Nx.multiply(buttons, solution) |> Nx.sum(axes: [1]) == prize
+    end)
+    |> Stream.map(&elem(&1, 2))
+    |> Stream.map(&Nx.multiply(&1, Nx.tensor([3, 1])))
+    |> Stream.map(&Nx.sum/1)
+    |> Stream.map(&Nx.to_number/1)
+    |> Enum.sum()
   end
 
   defp parse(input) do
