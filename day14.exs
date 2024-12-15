@@ -55,7 +55,21 @@ defmodule Day14 do
   end
 
   def part2(input) do
-    :not_implemented
+    [w, h] = System.argv() |> Enum.map(&String.to_integer/1)
+
+    input
+    |> parse()
+    |> movement_stream({w, h})
+    |> Stream.with_index()
+    |> Stream.take(w * h)
+    |> Stream.filter(fn {robots, _} -> has_tree?(robots) end)
+    |> Enum.each(fn {robots, seconds} ->
+      robots
+      |> Stream.map(& &1.position)
+      |> print_map({w, h})
+
+      IO.puts("Seconds: #{seconds}\n")
+    end)
   end
 
   defp parse(input) do
@@ -83,6 +97,28 @@ defmodule Day14 do
 
       IO.write("\n")
     end
+  end
+
+  defp movement_stream(robots, step \\ 1, {w, h}) do
+    Stream.iterate(robots, fn robots ->
+      Enum.map(robots, &Robot.move(&1, step, {w, h}))
+    end)
+  end
+
+  defp has_tree?(robots) do
+    positions =
+      robots
+      |> Stream.map(& &1.position)
+      |> MapSet.new()
+
+    positions
+    |> Enum.any?(fn {x, y} ->
+      Enum.all?(
+        # Random guess at length, but it worked.
+        Stream.iterate({x, y}, fn {x, y} -> {x + 1, y} end) |> Stream.take(10),
+        fn loc -> loc in positions end
+      )
+    end)
   end
 end
 
