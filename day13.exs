@@ -14,12 +14,10 @@ defmodule Day13 do
         |> Enum.reduce(%{buttons: %{}}, &parse_line/2)
 
       buttons =
-        Nx.f64(
-          [
-            Tuple.to_list(machine.buttons["A"]),
-            Tuple.to_list(machine.buttons["B"])
-          ]
-        )
+        Nx.f64([
+          Tuple.to_list(machine.buttons["A"]),
+          Tuple.to_list(machine.buttons["B"])
+        ])
         |> Nx.transpose()
 
       prize = Nx.f64(Tuple.to_list(machine.prize))
