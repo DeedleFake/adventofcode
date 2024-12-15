@@ -3,11 +3,10 @@
 defmodule Day15 do
   def part1(input) do
     {state, dirs} = parse(input)
-    state = Enum.reduce(dirs, state, &move_robot/2)
+    state = Enum.reduce(dirs, state, &print_state(move_robot(&1, &2)))
 
-    state.obstacles
-    |> Stream.filter(&match?({_, :box}, &1))
-    |> Stream.map(fn {loc, _} -> gps(loc) end)
+    state.boxes
+    |> Stream.map(&gps/1)
     |> Enum.sum()
   end
 
@@ -16,17 +15,13 @@ defmodule Day15 do
   end
 
   defp parse(input) do
-    [map, dirs] = String.split(input, "\n\n", trim: true)
-    {robot, obstacles} = parse_map(map)
+    [state, dirs] = String.split(input, "\n\n", trim: true)
 
-    {%{
-       robot: robot,
-       obstacles: obstacles
-     }, parse_dirs(dirs)}
+    {parse_state(state), parse_dirs(dirs)}
   end
 
-  defp parse_map(input) do
-    map =
+  defp parse_state(input) do
+    state =
       input
       |> String.splitter("\n", trim: true)
       |> Stream.with_index()
@@ -35,18 +30,17 @@ defmodule Day15 do
         |> String.splitter("", trim: true)
         |> Stream.with_index()
         |> Stream.reject(&match?({".", _}, &1))
-        |> Stream.map(fn
-          {"#", x} -> {{x, y}, :wall}
-          {"O", x} -> {{x, y}, :box}
-          {"@", x} -> {{x, y}, :robot}
-        end)
+        |> Stream.map(fn {type, x} -> {type, {x, y}} end)
       end)
-      |> Map.new()
+      |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
 
-    {robot, _} = map |> Enum.find(&match?({_, :robot}, &1))
-    map = Map.delete(map, robot)
+    [robot] = state["@"]
 
-    {robot, map}
+    %{
+      robot: robot,
+      walls: state["#"] |> MapSet.new(),
+      boxes: state["O"] |> Stream.map(fn box -> [box] end) |> MapSet.new()
+    }
   end
 
   defp parse_dirs(input) do
@@ -62,75 +56,70 @@ defmodule Day15 do
   end
 
   defp move_robot(dir, state) do
-    movements(state.robot, dir)
-    |> Stream.map(&{&1, state.obstacles[&1]})
-    |> Enum.reduce_while([], fn
-      {_, nil}, boxes -> {:halt, boxes}
-      {_, :wall}, _ -> {:halt, :wall}
-      {box, :box}, boxes -> {:cont, [box | boxes]}
-    end)
-    |> case do
-      :wall ->
-        state
+    moved = move(dir, state.robot)
 
-      [] ->
-        %{state | robot: move(state.robot, dir)}
-
-      [box] ->
-        state =
-          update_in(state.obstacles, fn obstacles ->
-            obstacles
-            |> Map.delete(box)
-            |> Map.put(move(box, dir), :box)
-          end)
-
-        %{state | robot: move(state.robot, dir)}
-
-      [first | boxes] ->
-        state =
-          update_in(state.obstacles, fn obstacles ->
-            last = List.last(boxes)
-
-            obstacles
-            |> Map.delete(last)
-            |> Map.put(move(first, dir), :box)
-          end)
-
-        %{state | robot: move(state.robot, dir)}
+    case shove(dir, state, [moved]) do
+      {:moved, state} -> put_in(state.robot, moved)
+      :blocked -> state
     end
   end
 
-  defp movements(start, dir) do
-    Stream.iterate(move(start, dir), &move(&1, dir))
+  defp shove(dir, state, box) do
+    if Enum.any?(box, &(&1 in state.walls)) do
+      :blocked
+    else
+      moved = box |> Enum.map(&move(dir, &1))
+
+      state.boxes
+      |> Stream.reject(&(&1 == box))
+      |> Stream.filter(&collides?(box, &1))
+      |> Enum.reduce_while({:moved, state}, fn
+        collided, {:moved, new_state} -> {:cont, shove(dir, new_state, collided)}
+        _, :blocked -> {:halt, :blocked}
+      end)
+      |> case do
+        {:moved, new_state} ->
+          state =
+            update_in(new_state.boxes, fn boxes ->
+              boxes
+              |> MapSet.delete(box)
+              |> MapSet.put(moved)
+            end)
+
+          {:moved, state}
+
+        :blocked ->
+          state
+      end
+    end
   end
 
-  defp move({x, y}, :left), do: {x - 1, y}
-  defp move({x, y}, :right), do: {x + 1, y}
-  defp move({x, y}, :up), do: {x, y - 1}
-  defp move({x, y}, :down), do: {x, y + 1}
+  defp move(:left, {x, y}), do: {x - 1, y}
+  defp move(:right, {x, y}), do: {x + 1, y}
+  defp move(:up, {x, y}), do: {x, y - 1}
+  defp move(:down, {x, y}), do: {x, y + 1}
 
-  defp gps({x, y}), do: 100 * y + x
+  defp collides?(b1, b2), do: Enum.any?(b1, &(&1 in b2))
+
+  defp gps([{x, y}]), do: 100 * y + x
 
   defp print_state(state) do
-    {w, h} =
-      state.obstacles
-      |> Stream.map(&elem(&1, 0))
-      |> Enum.max()
+    {w, h} = Enum.max(state.walls)
 
     for y <- 0..h//1 do
       for x <- 0..w//1 do
-        case state.obstacles[{x, y}] do
-          _ when {x, y} == state.robot -> IO.write("@")
-          :wall -> IO.write("#")
-          :box -> IO.write("O")
-          nil -> IO.write(".")
+        cond do
+          {x, y} == state.robot -> IO.write("@")
+          {x, y} in state.walls -> IO.write("#")
+          [{x, y}] in state.boxes -> IO.write("O")
+          true -> IO.write(".")
         end
       end
 
       IO.write("\n")
     end
 
-    :ok
+    state
   end
 end
 
