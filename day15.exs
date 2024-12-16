@@ -3,7 +3,7 @@
 defmodule Day15 do
   def part1(input) do
     {state, dirs} = parse(input)
-    state = Enum.reduce(dirs, state, &move_robot(&1, &2))
+    state = Enum.reduce(dirs, state, &move_robot/2)
 
     state.boxes
     |> Stream.map(&gps/1)
@@ -11,7 +11,13 @@ defmodule Day15 do
   end
 
   def part2(input) do
-    :not_implemented
+    {state, dirs} = parse(input)
+    state = widen(state)
+    state = Enum.reduce(dirs, state, &move_robot/2)
+
+    state.boxes
+    |> Stream.map(&gps/1)
+    |> Enum.sum()
   end
 
   defp parse(input) do
@@ -55,6 +61,27 @@ defmodule Day15 do
     end)
   end
 
+  defp widen(state) do
+    {x, y} = state.robot
+    robot = {x * 2, y}
+
+    boxes =
+      state.boxes
+      |> Stream.map(fn [{x, y}] -> [{x * 2, y}, {x * 2 + 1, y}] end)
+      |> MapSet.new()
+
+    walls =
+      state.walls
+      |> Stream.flat_map(fn {x, y} -> [{x * 2, y}, {x * 2 + 1, y}] end)
+      |> MapSet.new()
+
+    %{
+      robot: robot,
+      boxes: boxes,
+      walls: walls
+    }
+  end
+
   defp move_robot(dir, state) do
     moved = move(dir, state.robot)
 
@@ -64,24 +91,19 @@ defmodule Day15 do
     end
   end
 
-  defp shove(dir, state, box) do
+  defp shove(dir, state, box) when is_list(box) do
     if Enum.any?(box, &(&1 in state.walls)) do
       :blocked
     else
       state.boxes
       |> Stream.filter(&collides?(box, &1))
       |> Enum.reduce_while({:moved, state}, fn collided, {:moved, new_state} ->
+        new_state = update_in(new_state.boxes, &MapSet.delete(&1, collided))
         moved = Enum.map(collided, &move(dir, &1))
 
         case shove(dir, new_state, moved) do
           {:moved, new_state} ->
-            new_state =
-              update_in(new_state.boxes, fn boxes ->
-                boxes
-                |> MapSet.delete(collided)
-                |> MapSet.put(moved)
-              end)
-
+            new_state = update_in(new_state.boxes, &MapSet.put(&1, moved))
             {:cont, {:moved, new_state}}
 
           :blocked ->
@@ -98,7 +120,7 @@ defmodule Day15 do
 
   defp collides?(b1, b2), do: Enum.any?(b1, &(&1 in b2))
 
-  defp gps([{x, y}]), do: 100 * y + x
+  defp gps([{x, y} | _]), do: 100 * y + x
 
   defp print_state(state) do
     {w, h} = Enum.max(state.walls)
@@ -106,10 +128,27 @@ defmodule Day15 do
     for y <- 0..h//1 do
       for x <- 0..w//1 do
         cond do
-          {x, y} == state.robot -> IO.write("@")
-          {x, y} in state.walls -> IO.write("#")
-          [{x, y}] in state.boxes -> IO.write("O")
-          true -> IO.write(".")
+          {x, y} == state.robot ->
+            IO.write("@")
+
+          {x, y} in state.walls ->
+            IO.write("#")
+
+          [{x, y}] in state.boxes ->
+            IO.write("O")
+
+          true ->
+            box = Enum.find(state.boxes, &({x, y} in &1))
+
+            if box do
+              case Enum.find_index(box, &match?({^x, ^y}, &1)) do
+                0 -> IO.write("[")
+                n when n == length(box) - 1 -> IO.write("]")
+                _ -> IO.write("_")
+              end
+            else
+              IO.write(".")
+            end
         end
       end
 
