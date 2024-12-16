@@ -3,7 +3,7 @@
 defmodule Day15 do
   def part1(input) do
     {state, dirs} = parse(input)
-    state = Enum.reduce(dirs, state, &print_state(move_robot(&1, &2)))
+    state = Enum.reduce(dirs, state, &move_robot(&1, &2))
 
     state.boxes
     |> Stream.map(&gps/1)
@@ -68,29 +68,26 @@ defmodule Day15 do
     if Enum.any?(box, &(&1 in state.walls)) do
       :blocked
     else
-      moved = box |> Enum.map(&move(dir, &1))
-
       state.boxes
-      |> Stream.reject(&(&1 == box))
       |> Stream.filter(&collides?(box, &1))
-      |> Enum.reduce_while({:moved, state}, fn
-        collided, {:moved, new_state} -> {:cont, shove(dir, new_state, collided)}
-        _, :blocked -> {:halt, :blocked}
+      |> Enum.reduce_while({:moved, state}, fn collided, {:moved, new_state} ->
+        moved = Enum.map(collided, &move(dir, &1))
+
+        case shove(dir, new_state, moved) do
+          {:moved, new_state} ->
+            new_state =
+              update_in(new_state.boxes, fn boxes ->
+                boxes
+                |> MapSet.delete(collided)
+                |> MapSet.put(moved)
+              end)
+
+            {:cont, {:moved, new_state}}
+
+          :blocked ->
+            {:halt, :blocked}
+        end
       end)
-      |> case do
-        {:moved, new_state} ->
-          state =
-            update_in(new_state.boxes, fn boxes ->
-              boxes
-              |> MapSet.delete(box)
-              |> MapSet.put(moved)
-            end)
-
-          {:moved, state}
-
-        :blocked ->
-          state
-      end
     end
   end
 
