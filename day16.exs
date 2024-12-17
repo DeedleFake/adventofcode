@@ -75,39 +75,29 @@ defmodule Day16 do
   end
 
   defp short_routes_tiles(costs, start, target) do
-    short_routes_tiles(costs, [{[start], MapSet.new()}], target, MapSet.new())
+    short_routes_tiles(costs, [[start]], target, MapSet.new([target]))
   end
 
   defp short_routes_tiles(_costs, [], _target, result), do: result
 
-  defp short_routes_tiles(costs, [{[target | _], visited} | next], target, result) do
-    short_routes_tiles(costs, next, target, MapSet.union(result, visited) |> MapSet.put(target))
-  end
-
-  defp short_routes_tiles(costs, [{[{x, y} | _] = path, visited} | next], target, result) do
-    valid? =
-      path
-      |> Stream.map(&costs[&1])
-      |> Enum.take(3)
-      |> case do
-        [a, b, c] -> a > b or b > c
-        _ -> true
-      end
-
-    next =
-      if valid? do
-        visited = MapSet.put(visited, {x, y})
-
-        [{x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1}]
-        |> Stream.filter(fn loc -> costs[loc] <= costs[target] end)
-        |> Stream.reject(fn loc -> loc in visited end)
-        |> Stream.map(fn loc -> {[loc | path], visited} end)
-        |> Enum.concat(next)
+  defp short_routes_tiles(costs, [[{x, y} | prev] = path | next], target, result) do
+    if still_valid?(path, costs) do
+      if {x, y} in result do
+        result = Enum.into(path, result)
+        short_routes_tiles(costs, next, target, result)
       else
-        next
-      end
+        next =
+          [{x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1}]
+          |> Stream.filter(fn loc -> costs[loc] <= costs[target] end)
+          |> Stream.reject(fn loc -> loc in prev end)
+          |> Stream.map(fn loc -> [loc | path] end)
+          |> Enum.concat(next)
 
-    short_routes_tiles(costs, next, target, result)
+        short_routes_tiles(costs, next, target, result)
+      end
+    else
+      short_routes_tiles(costs, next, target, result)
+    end
   end
 
   defp next_moves({cost, {loc, dir}}) do
@@ -134,6 +124,13 @@ defmodule Day16 do
   defp turn(:right, :west), do: :north
   defp turn(:right, :south), do: :west
   defp turn(:right, :east), do: :south
+
+  defp still_valid?([a, b, c | _], costs) do
+    cb = costs[b]
+    costs[a] > cb or cb > costs[c]
+  end
+
+  defp still_valid?(_path, _costs), do: true
 
   defp print_costs(maze, costs, highlight \\ []) do
     {w, h} = Enum.max(maze.walls)
