@@ -14,7 +14,7 @@ defmodule Day16 do
     costs = dijkstras(maze)
 
     costs
-    |> short_routes_tiles([maze.start], maze.goal)
+    |> short_routes_tiles(maze.start, maze.goal)
     |> MapSet.size()
   end
 
@@ -74,13 +74,17 @@ defmodule Day16 do
     end
   end
 
-  defp short_routes_tiles(costs, path, target, visited \\ MapSet.new())
-
-  defp short_routes_tiles(_costs, [target | _], target, visited) do
-    MapSet.put(visited, target)
+  defp short_routes_tiles(costs, start, target) do
+    short_routes_tiles(costs, [{[start], MapSet.new()}], target, MapSet.new())
   end
 
-  defp short_routes_tiles(costs, [{x, y} | _] = path, target, visited) do
+  defp short_routes_tiles(_costs, [], _target, result), do: result
+
+  defp short_routes_tiles(costs, [{[target | _], visited} | next], target, result) do
+    short_routes_tiles(costs, next, target, MapSet.union(result, visited) |> MapSet.put(target))
+  end
+
+  defp short_routes_tiles(costs, [{[{x, y} | _] = path, visited} | next], target, result) do
     valid? =
       path
       |> Stream.map(&costs[&1])
@@ -90,18 +94,20 @@ defmodule Day16 do
         _ -> true
       end
 
-    if valid? do
-      visited = MapSet.put(visited, {x, y})
+    next =
+      if valid? do
+        visited = MapSet.put(visited, {x, y})
 
-      [{x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1}]
-      |> Stream.filter(fn loc -> costs[loc] <= costs[target] end)
-      |> Stream.reject(fn loc -> loc in visited end)
-      |> Enum.reduce(MapSet.new(), fn loc, tiles ->
-        MapSet.union(tiles, short_routes_tiles(costs, [loc | path], target, visited))
-      end)
-    else
-      MapSet.new()
-    end
+        [{x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1}]
+        |> Stream.filter(fn loc -> costs[loc] <= costs[target] end)
+        |> Stream.reject(fn loc -> loc in visited end)
+        |> Stream.map(fn loc -> {[loc | path], visited} end)
+        |> Enum.concat(next)
+      else
+        next
+      end
+
+    short_routes_tiles(costs, next, target, result)
   end
 
   defp next_moves({cost, {loc, dir}}) do
