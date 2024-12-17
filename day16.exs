@@ -4,12 +4,18 @@ Mix.install([:heap])
 
 defmodule Day16 do
   def part1(input) do
-    parse(input)
-    |> shortest_route()
+    maze = parse(input)
+    costs = dijkstras(maze)
+    costs[maze.goal]
   end
 
   def part2(input) do
-    :not_implemented
+    maze = parse(input)
+    costs = dijkstras(maze)
+
+    costs
+    |> short_routes_tiles([maze.start], maze.goal)
+    |> MapSet.size()
   end
 
   defp parse(input) do
@@ -23,7 +29,6 @@ defmodule Day16 do
         |> Stream.with_index()
         |> Stream.map(fn {c, x} -> {{x, y}, c} end)
       end)
-      |> Stream.reject(&match?({_, "."}, &1))
       |> Enum.group_by(&elem(&1, 1), &elem(&1, 0))
 
     [start] = tiles["S"]
@@ -37,44 +42,76 @@ defmodule Day16 do
     }
   end
 
-  defp shortest_route(maze) do
-    queue = [{0, maze.start, :east}] |> Enum.into(Heap.new())
-    shortest_route(maze, queue, MapSet.new())
+  defp dijkstras(maze) do
+    dist = %{}
+
+    queue =
+      Heap.new()
+      |> Heap.push({0, {maze.start, :east}})
+
+    dijkstras(maze, queue, dist)
   end
 
-  defp shortest_route(maze, queue, visited) do
+  defp dijkstras(maze, queue, dist) do
     case Heap.split(queue) do
-      {{cost, loc, dir} = cur, queue} ->
-        cond do
-          loc == maze.goal ->
-            cost
+      {{cost, {loc, dir}}, queue} ->
+        if cost < dist[loc] do
+          dist = Map.put(dist, loc, cost)
 
-          {loc, dir} in visited ->
-            shortest_route(maze, queue, visited)
+          queue =
+            next_moves({cost, {loc, dir}})
+            |> Stream.reject(fn {_, {loc, _}} -> loc in maze.walls end)
+            |> Stream.filter(fn {cost, {loc, _}} -> cost < dist[loc] end)
+            |> Enum.into(queue)
 
-          loc in maze.walls ->
-            shortest_route(maze, queue, visited)
-
-          true ->
-            queue =
-              next_moves(cur)
-              |> Enum.into(queue)
-
-            visited = MapSet.put(visited, {loc, dir})
-
-            shortest_route(maze, queue, visited)
+          dijkstras(maze, queue, dist)
+        else
+          dijkstras(maze, queue, dist)
         end
 
       {nil, nil} ->
-        :no_route_found
+        dist
     end
   end
 
-  defp next_moves({cost, loc, dir}) do
+  defp short_routes_tiles(costs, path, target, visited \\ MapSet.new())
+
+  defp short_routes_tiles(_costs, [target | _], target, visited) do
+    MapSet.put(visited, target)
+  end
+
+  defp short_routes_tiles(costs, [{x, y} | _] = path, target, visited) do
+    valid? =
+      path
+      |> Stream.map(&costs[&1])
+      |> Enum.take(3)
+      |> case do
+        [a, b, c] -> a > b or b > c
+        _ -> true
+      end
+
+    if valid? do
+      visited = MapSet.put(visited, {x, y})
+
+      [{x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1}]
+      |> Stream.filter(fn loc -> costs[loc] <= costs[target] end)
+      |> Stream.reject(fn loc -> loc in visited end)
+      |> Enum.reduce(MapSet.new(), fn loc, tiles ->
+        MapSet.union(tiles, short_routes_tiles(costs, [loc | path], target, visited))
+      end)
+    else
+      MapSet.new()
+    end
+  end
+
+  defp next_moves({cost, {loc, dir}}) do
+    left = turn(:left, dir)
+    right = turn(:right, dir)
+
     [
-      {cost + 1, move(dir, loc), dir},
-      {cost + 1000, loc, turn(:left, dir)},
-      {cost + 1000, loc, turn(:right, dir)}
+      {cost + 1, {move(dir, loc), dir}},
+      {cost + 1001, {move(left, loc), left}},
+      {cost + 1001, {move(right, loc), right}}
     ]
   end
 
@@ -91,6 +128,32 @@ defmodule Day16 do
   defp turn(:right, :west), do: :north
   defp turn(:right, :south), do: :west
   defp turn(:right, :east), do: :south
+
+  defp print_costs(maze, costs, highlight \\ []) do
+    {w, h} = Enum.max(maze.walls)
+
+    for y <- 0..(h - 1) do
+      for x <- 0..(w - 1) do
+        case costs[{x, y}] do
+          nil ->
+            IO.write("        ")
+
+          cost ->
+            if {x, y} in highlight do
+              IO.write(IO.ANSI.yellow_background())
+              IO.write(IO.ANSI.black())
+            end
+
+            IO.write("[" <> String.pad_leading("#{cost}", 6) <> "]")
+            IO.write(IO.ANSI.reset())
+        end
+      end
+
+      IO.write("\n")
+    end
+
+    :ok
+  end
 end
 
 input = IO.read(:eof)
