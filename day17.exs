@@ -1,5 +1,7 @@
 #!/usr/bin/env elixir
 
+Mix.install([:flow])
+
 defmodule Day17 do
   import Bitwise
 
@@ -13,7 +15,21 @@ defmodule Day17 do
   end
 
   def part2(input) do
-    :not_implemented
+    state = parse(input)
+
+    target =
+      state.program
+      |> Tuple.to_list()
+      |> Enum.flat_map(&Tuple.to_list/1)
+
+    Stream.iterate(0, &(&1 + 1))
+    |> Flow.from_enumerable()
+    |> Flow.filter(fn a ->
+      state = put_in(state.registers["A"], a)
+      {output, _} = run_program(state)
+      output == target
+    end)
+    |> Enum.at(0)
   end
 
   defp parse(input) do
@@ -38,8 +54,9 @@ defmodule Day17 do
 
   defp run_program(state, output \\ [])
 
-  defp run_program(%{program: program, pc: pc} = state, output) when div(pc, 2) >= tuple_size(program),
-    do: {Enum.reverse(output), state}
+  defp run_program(%{program: program, pc: pc} = state, output)
+       when div(pc, 2) >= tuple_size(program),
+       do: {Enum.reverse(output), state}
 
   defp run_program(state, output) do
     instruction = elem(state.program, div(state.pc, 2))
