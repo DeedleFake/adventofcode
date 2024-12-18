@@ -22,8 +22,11 @@ defmodule Day17 do
       |> Tuple.to_list()
       |> Enum.flat_map(&Tuple.to_list/1)
 
-    Stream.iterate(0, &(&1 + 1))
-    |> Flow.from_enumerable()
+    [
+      Stream.iterate(state.registers["A"], &(&1 + 1)),
+      Stream.iterate(state.registers["A"], &(&1 - 1)) |> Stream.take_while(&(&1 >= 0))
+    ]
+    |> Flow.from_enumerables()
     |> Flow.filter(fn a ->
       state = put_in(state.registers["A"], a)
       {output, _} = run_program(state)
