@@ -20,7 +20,25 @@ defmodule Day18 do
   end
 
   def part2(input) do
-    :not_implemented
+    # bounds = {6, 6}
+    bounds = {70, 70}
+
+    bytes =
+      input
+      |> parse()
+
+    num_bytes = length(bytes)
+
+    Stream.iterate(1, &(&1 + 1))
+    |> Stream.take(num_bytes)
+    |> Stream.map(&Stream.take(bytes, &1))
+    |> Enum.find(fn bytes ->
+      bytes = MapSet.new(bytes)
+      astar(bytes, bounds) == :no_route
+    end)
+    |> Enum.at(-1)
+    |> Tuple.to_list()
+    |> Enum.join(",")
   end
 
   defp parse(input) do
