@@ -11,7 +11,12 @@ defmodule Day20 do
   end
 
   def part2(input) do
-    :not_implemented
+    input
+    |> parse()
+    |> path_distances()
+    |> cheats(20)
+    |> Stream.filter(&match?({_, _, saved} when saved >= 50, &1))
+    |> Enum.count()
   end
 
   defp parse(input) do
@@ -66,16 +71,33 @@ defmodule Day20 do
     ]
   end
 
-  defp cheats(distances) do
+  defp cheats(distances, max_len \\ 2) do
     distances
     |> Stream.flat_map(fn {loc, dist} ->
-      loc
-      |> neighbors()
-      |> Stream.flat_map(&neighbors/1)
-      |> Stream.reject(&(&1 == loc))
-      |> Stream.filter(&is_map_key(distances, &1))
-      |> Stream.map(&{loc, &1, distances[&1] - dist - 2})
+      [[{loc, 0}]]
+      |> gen_cheats(max_len)
+      |> Stream.filter(&match?({loc, _} when is_map_key(distances, loc), &1))
+      |> Stream.map(fn {loc, len} -> {loc, loc, distances[loc] - dist - len} end)
     end)
+    |> Stream.uniq()
+  end
+
+  defp gen_cheats([[{_, max_len} | _] | _] = from, max_len) do
+    from
+    |> Stream.concat()
+    |> Stream.filter(&match?({_, len} when len >= 2, &1))
+  end
+
+  defp gen_cheats([prev | _] = from, max_len) do
+    next =
+      prev
+      |> Enum.flat_map(fn {loc, len} ->
+        neighbors(loc)
+        |> Stream.map(&{&1, len + 1})
+        |> Stream.concat([{loc, len}])
+      end)
+
+    gen_cheats([next | from], max_len)
   end
 end
 
