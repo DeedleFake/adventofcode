@@ -15,7 +15,7 @@ defmodule Day20 do
     |> parse()
     |> path_distances()
     |> cheats(20)
-    |> Stream.filter(&match?({_, _, saved} when saved >= 50, &1))
+    |> Stream.filter(&match?({_, _, saved} when saved >= 100, &1))
     |> Enum.count()
   end
 
@@ -74,28 +74,27 @@ defmodule Day20 do
   defp cheats(distances, max_len \\ 2) do
     distances
     |> Stream.flat_map(fn {from, dist} ->
-      [{from, 0}]
-      |> gen_cheats(max_len, MapSet.new())
+      gen_cheats(from, max_len)
       |> Stream.filter(&match?({to, _} when is_map_key(distances, to), &1))
       |> Stream.map(fn {to, len} -> {from, to, distances[to] - dist - len} end)
     end)
   end
 
-  defp gen_cheats([{_, max_len} | _], max_len, result) do
-    result
-    |> Stream.filter(&match?({_, len} when len >= 2, &1))
-  end
+  defp gen_cheats({x, y}, max_len) do
+    for len <- 2..max_len, dx <- 0..len do
+      dy = len - dx
 
-  defp gen_cheats(prev, max_len, result) do
-    next =
-      prev
-      |> Enum.flat_map(fn {loc, len} ->
-        neighbors(loc)
-        |> Stream.map(&{&1, len + 1})
-        |> Stream.reject(&(&1 in result))
-      end)
-
-    gen_cheats(next, max_len, next |> Enum.into(result))
+      [
+        {x + dx, y + dy},
+        {x - dx, y + dy},
+        {x + dx, y - dy},
+        {x - dx, y - dy}
+      ]
+      |> Stream.map(&{&1, len})
+    end
+    |> Stream.concat()
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Stream.map(fn {to, lens} -> {to, Enum.min(lens)} end)
   end
 end
 
