@@ -1,4 +1,6 @@
 def Main: ! = chan exit {
+	let dial = Dial
+
 	catch e => {
 		Debug.Log(String.Builder.add("Error: ").add(e).build)
 		exit!
@@ -6,14 +8,40 @@ def Main: ! = chan exit {
 
 	Parse.begin.case {
 		.item(rot) parser => {
-			Debug.Log(Rotation.ToString(rot))
+			dial.rotate(rot)
 			parser.loop
 		},
 		else try result => {},
 	}
+	Debug.Log(Nat.ToString(dial.zeroes))
 
 	exit!
 }
+
+type Dial = iterative box choice {
+	.rotate(Rotation) => self,
+	.zeroes => Nat,
+}
+
+dec Dial : Dial
+def Dial = do {
+		let cur: Int = 50
+		let zeroes: Nat = 0
+	} in begin box case {
+		.rotate((dir) amount) => do {
+			dir.case {
+				.left! => { cur->Int.Sub(amount) },
+				.right! => { cur->Int.Add(amount) },
+			}
+
+			Int.Equals(cur, 0).case {
+				.true! => { zeroes->Nat.Add(1) },
+				.false! => {},
+			}
+		} in loop,
+
+		.zeroes => zeroes,
+	}
 
 dec Parse : ResultList<Os.Error, Rotation>
 def Parse =
