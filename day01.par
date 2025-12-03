@@ -30,8 +30,8 @@ def Dial = do {
 	} in begin box case {
 		.rotate((dir) amount) => do {
 			dir.case {
-				.left! => { cur->Int.Sub(amount) },
-				.right! => { cur->Int.Add(amount) },
+				.left! => { cur->Int.Sub(amount)->Int.Mod(100) },
+				.right! => { cur->Int.Add(amount)->Int.Mod(100) },
 			}
 
 			Int.Equals(cur, 0).case {
