@@ -1,0 +1,116 @@
+def Main: ! = chan exit {
+	let dial = Dial
+
+	catch e => {
+		Debug.Log(String.Builder.add("Error: ").add(e).build)
+		exit!
+	}
+
+	Parse.begin.case {
+		.end try result => {},
+		.item(rot) parser => {
+			dial.rotate(rot)
+			parser.loop
+		},
+	}
+	Debug.Log(Nat.ToString(dial.zeroes))
+
+	exit!
+}
+
+type Dial = iterative box choice {
+	.rotate(Rotation) => self,
+	.zeroes => Nat,
+}
+
+dec Dial : Dial
+def Dial = do {
+		let cur: Int = 50
+		let zeroes: Nat = 0
+	} in begin box case {
+		.rotate((dir) amount) => do {
+			dir.case {
+				.left! => {
+					Nat.Repeat(amount).begin@rotate.case {
+						.end! => {},
+						.step next => {
+							cur->Int.Sub(1)->Int.Mod(100)
+							Int.Equals(cur, 0).case { .true! => { zeroes->Nat.Add(1) }, .false! => {} }
+							next.loop@rotate
+						},
+					}
+				},
+				.right! => {
+					Nat.Repeat(amount).begin@rotate.case {
+						.end! => {},
+						.step next => {
+							cur->Int.Add(1)->Int.Mod(100)
+							Int.Equals(cur, 0).case { .true! => { zeroes->Nat.Add(1) }, .false! => {} }
+							next.loop@rotate
+						},
+					}
+				},
+			}
+		} in loop,
+
+		.zeroes => zeroes,
+	}
+
+dec Parse : List.Result<Os.Error, Rotation>
+def Parse =
+	catch e => .end.err e in
+	let parser = String.ParserFromReader(type Os.Error)(Os.Stdin) in
+	String.Lines(parser).begin.case {
+		.end try ! => .end.ok!,
+		.item(line) lines => let try parsed = Rotation.Parse(line) in .item(parsed) lines.loop,
+	}
+
+type Direction = either {
+	.left!,
+	.right!,
+}
+type Direction.Error = String
+
+dec Direction.Parse : [String] Result<Direction.Error, Direction>
+def Direction.Parse = [str]
+	catch e => .err e in
+	String.Equals(str, "L").case {
+		.true! => .ok .left!,
+		.false! => String.Equals(str, "R").case {
+			.true! => .ok .right!,
+			.false! => throw String.Builder.add("invalid direction ").add(str).build,
+		},
+	}
+
+dec Direction.ToString : [Direction] String
+def Direction.ToString = [dir]
+	dir.case {
+		.left! => "L",
+		.right! => "R",
+	}
+
+type Rotation = (Direction) Nat
+type Rotation.Error = String
+
+dec Rotation.Parse : [String] Result<Rotation.Error, Rotation>
+def Rotation.Parse = [str]
+	catch e => .err e in
+	String.Parser(str).char.case {
+		.end try ! => throw "unexpected end of rotation",
+		.char(c) parser => do {
+			let r = Result.Always(parser.remainder)
+
+			let try dir = Direction.Parse(c)
+			let try amount = Nat.FromString(r).case {
+				.ok amount => .ok amount,
+				.err! => .err "invalid rotation amount",
+			}
+		} in .ok (dir) amount,
+	}
+
+dec Rotation.ToString : [Rotation] String
+def Rotation.ToString = [(dir) amount]
+	String.Builder
+		.add(Direction.ToString(dir))
+		.add(Nat.ToString(amount))
+		.build
