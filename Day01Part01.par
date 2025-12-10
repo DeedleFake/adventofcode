@@ -7,11 +7,11 @@ def Main: ! = chan exit {
 	}
 
 	Parse.begin.case {
+		.end try result => {},
 		.item(rot) parser => {
 			dial.rotate(rot)
 			parser.loop
 		},
-		else try result => {},
 	}
 	Debug.Log(Nat.ToString(dial.zeroes))
 
@@ -43,12 +43,13 @@ def Dial = do {
 		.zeroes => zeroes,
 	}
 
-dec Parse : ResultList<Os.Error, Rotation>
+dec Parse : List.Result<Os.Error, Rotation>
 def Parse =
-	catch e => .err e in
-	Lines(type Os.Error)(String.ParserFromReader(type Os.Error)(Os.Stdin)).begin.case {
+	catch e => .end.err e in
+	let parser = String.ParserFromReader(type Os.Error)(Os.Stdin) in
+	String.Lines(parser).begin.case {
+		.end try ! => .end.ok!,
 		.item(line) lines => let try parsed = Rotation.Parse(line) in .item(parsed) lines.loop,
-		else try ! => .ok!,
 	}
 
 type Direction = either {
@@ -84,7 +85,7 @@ def Rotation.Parse = [str]
 	String.Parser(str).char.case {
 		.end try ! => throw "unexpected end of rotation",
 		.char(c) parser => do {
-			let r = Result.Always(type String)(parser.remainder)
+			let r = Result.Always(parser.remainder)
 
 			let try dir = Direction.Parse(c)
 			let try amount = Nat.FromString(r).case {
@@ -100,19 +101,3 @@ def Rotation.ToString = [(dir) amount]
 		.add(Direction.ToString(dir))
 		.add(Nat.ToString(amount))
 		.build
-
-// ResultList<e, v> is simultaneously a List<v> and a Result<e, !>.
-type ResultList<e, v> = recursive either {
-	.ok!,
-	.err e,
-	.item(v) self,
-}
-
-dec Lines : [type e] [String.Parser<e>] ResultList<e, String>
-def Lines = [type e] [parser]
-	catch e => .err e in
-	parser.begin.match(.repeat.one.any!, .str "\n").case {
-		.end try ! => .ok !,
-		.fail parser => let try r = parser.remainder in .item(r) .ok!,
-		.match(line, _) parser => .item(line) parser.loop,
-	}
