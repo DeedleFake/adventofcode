@@ -20,9 +20,10 @@ defmodule Day02 do
   defp invalid?(id) do
     str = Integer.to_string(id)
     h = div(byte_size(str), 2)
-    p1 = binary_slice(str, 0..(h - 1)//1)
-    p2 = binary_slice(str, h..-1//1)
-    p1 == p2
+    case str do
+      <<p1::binary-size(^h), p2::binary-size(^h)>> -> p1 == p2
+      <<_p1::binary-size(^h + 1), _p2::binary-size(^h)>> -> false
+    end
   end
 end
 
