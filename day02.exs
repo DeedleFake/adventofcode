@@ -10,7 +10,7 @@ defmodule Day02 do
 
   defp input() do
     IO.read(:eof)
-    |> String.trim()
+    |> String.replace(~r/\s/, "")
     |> String.splitter(",")
     |> Stream.map(fn str -> String.split(str, "-", parts: 2) end)
     |> Stream.map(fn [from, to] -> String.to_integer(from)..String.to_integer(to)//1 end)
